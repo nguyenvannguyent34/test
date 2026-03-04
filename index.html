@@ -135,6 +135,12 @@ th{
 .hidden{
     display:none;
 }
+.nav-buttons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:15px;
+}
 </style>
 </head>
 <body>
@@ -154,12 +160,19 @@ th{
 
 <script>
 const ADMIN_PASSWORD = "101212019";
-const EXCEL_FILE = "questions.xlsx";
+const EXCEL_FILE = "questions.xlsx";   // file công khai trên GitHub
 const QUESTIONS_PER_EXAM = 20;
 const EXAM_TIME = 20 * 60;
 
 let results = JSON.parse(localStorage.getItem("results")) || [];
-let allQuestions = JSON.parse(localStorage.getItem("cachedQuestions")) || [];
+
+/*
+  Nguồn câu hỏi:
+  1) Ưu tiên file công khai questions.xlsx trên GitHub / server
+  2) Nếu lỗi thì fallback về bộ câu hỏi cache cục bộ (nếu có)
+*/
+let allQuestions = [];
+let cachedQuestions = JSON.parse(localStorage.getItem("cachedQuestions")) || [];
 
 let current = 0;
 let score = 0;
@@ -167,35 +180,44 @@ let timeLeft = EXAM_TIME;
 let timer = null;
 let startTime = null;
 let examQuestions = [];
+let userAnswers = [];
 let userName = "";
 let userUnit = "";
 let selectedAnswer = null;
+let questionSourceText = "Chưa tải bộ câu hỏi";
 
 function saveResults(){
     localStorage.setItem("results", JSON.stringify(results));
 }
-
 function saveQuestionCache(){
     localStorage.setItem("cachedQuestions", JSON.stringify(allQuestions));
 }
-
 function clearQuestionCache(){
     localStorage.removeItem("cachedQuestions");
+    cachedQuestions = [];
     allQuestions = [];
+}
+
+async function bootApp(){
+    await loadPublicQuestions();
+    home();
 }
 
 function home(){
     let statusHtml = "";
+
     if(allQuestions.length >= QUESTIONS_PER_EXAM){
         statusHtml = `
             <div class="box ok">
-                Hệ thống đã có bộ câu hỏi: <strong>${allQuestions.length}</strong> câu.
+                Hệ thống đã sẵn sàng bộ câu hỏi: <strong>${allQuestions.length}</strong> câu.<br>
+                Nguồn dữ liệu: <strong>${questionSourceText}</strong>
             </div>
         `;
     }else{
         statusHtml = `
             <div class="box warn">
-                Hệ thống chưa có bộ câu hỏi. Quản trị cần vào mục <strong>QUẢN TRỊ</strong> để nạp file Excel.
+                Chưa tải được bộ câu hỏi công khai.<br>
+                ${questionSourceText}
             </div>
         `;
     }
@@ -206,6 +228,34 @@ function home(){
         <button onclick="studentLogin()">THÍ SINH</button>
         <button onclick="adminLogin()">QUẢN TRỊ</button>
     `;
+}
+
+async function loadPublicQuestions(){
+    try{
+        const ok = await loadQuestionsByFetch();
+        if(ok){
+            questionSourceText = "File công khai questions.xlsx";
+            return true;
+        }
+
+        if(cachedQuestions.length >= QUESTIONS_PER_EXAM){
+            allQuestions = cachedQuestions;
+            questionSourceText = "Bộ câu hỏi cache cục bộ trên máy này";
+            return true;
+        }
+
+        questionSourceText = "Không tìm thấy file questions.xlsx hoặc file chưa đúng định dạng";
+        return false;
+    }catch(err){
+        console.error(err);
+        if(cachedQuestions.length >= QUESTIONS_PER_EXAM){
+            allQuestions = cachedQuestions;
+            questionSourceText = "Bộ câu hỏi cache cục bộ trên máy này";
+            return true;
+        }
+        questionSourceText = "Lỗi khi tải file questions.xlsx";
+        return false;
+    }
 }
 
 function studentLogin(){
@@ -228,11 +278,13 @@ function startExam(){
     }
 
     if(allQuestions.length < QUESTIONS_PER_EXAM){
-        alert("Chưa có bộ câu hỏi. Vui lòng liên hệ Quản trị để nạp file questions.xlsx.");
+        alert("Chưa có bộ câu hỏi công khai hợp lệ. Hãy kiểm tra file questions.xlsx trên GitHub.");
         return;
     }
 
     examQuestions = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, QUESTIONS_PER_EXAM);
+    userAnswers = new Array(QUESTIONS_PER_EXAM).fill(null);
+
     current = 0;
     score = 0;
     timeLeft = EXAM_TIME;
@@ -244,9 +296,10 @@ function startExam(){
 }
 
 function renderQuestion(){
-    selectedAnswer = null;
     const q = examQuestions[current];
     const labels = ["A", "B", "C", "D"];
+
+    selectedAnswer = userAnswers[current];
 
     let html = `
         <div>
@@ -257,41 +310,53 @@ function renderQuestion(){
     `;
 
     q.options.forEach((opt, i) => {
+        const selectedClass = selectedAnswer === i ? "selected" : "";
         html += `
-            <div class="option" id="opt${i}" onclick="selectAnswer(${i})">
+            <div class="option ${selectedClass}" id="opt${i}" onclick="selectAnswer(${i})">
                 <strong>${labels[i]}.</strong> ${opt}
             </div>
         `;
     });
 
-    html += `<button onclick="nextQuestion()">Tiếp</button>`;
+    html += `<div class="nav-buttons">`;
+
+    if(current > 0){
+        html += `<button onclick="prevQuestion()">Câu trước</button>`;
+    }
+
+    if(current < QUESTIONS_PER_EXAM - 1){
+        html += `<button onclick="nextQuestion()">Tiếp</button>`;
+    }else{
+        html += `<button onclick="submitExam()">Nộp bài</button>`;
+    }
+
+    html += `</div>`;
+
     main.innerHTML = html;
     updateTimerDisplay();
 }
 
 function selectAnswer(i){
     selectedAnswer = i;
+    userAnswers[current] = i;
+
     document.querySelectorAll(".option").forEach(el => el.classList.remove("selected"));
     const chosen = document.getElementById("opt" + i);
     if(chosen) chosen.classList.add("selected");
 }
 
+function prevQuestion(){
+    current--;
+    renderQuestion();
+}
+
 function nextQuestion(){
-    if(selectedAnswer === null){
+    if(userAnswers[current] === null){
         alert("Chọn đáp án");
         return;
     }
-
-    if(selectedAnswer === examQuestions[current].correct){
-        score++;
-    }
-
     current++;
-    if(current < QUESTIONS_PER_EXAM){
-        renderQuestion();
-    }else{
-        finishExam();
-    }
+    renderQuestion();
 }
 
 function updateTimerDisplay(){
@@ -307,13 +372,34 @@ function startTimer(){
         timeLeft--;
         updateTimerDisplay();
         if(timeLeft <= 0){
-            finishExam();
+            submitExam(true);
         }
     }, 1000);
 }
 
+function submitExam(isTimeUp = false){
+    for(let i = 0; i < QUESTIONS_PER_EXAM; i++){
+        if(userAnswers[i] === null && !isTimeUp){
+            alert("Bạn chưa trả lời hết câu hỏi.");
+            current = i;
+            renderQuestion();
+            return;
+        }
+    }
+
+    finishExam();
+}
+
 function finishExam(){
     clearInterval(timer);
+
+    score = 0;
+    for(let i = 0; i < QUESTIONS_PER_EXAM; i++){
+        if(userAnswers[i] === examQuestions[i].correct){
+            score++;
+        }
+    }
+
     const usedTime = Math.floor((Date.now() - startTime) / 1000);
 
     results.push({
@@ -346,35 +432,22 @@ function adminLogin(){
 }
 
 function adminPanel(){
-    let sourceNote = "";
-    if(location.protocol === "http:" || location.protocol === "https:"){
-        sourceNote = `
-            <div class="box info">
-                Bạn đang chạy bằng server nội bộ (<strong>${location.protocol}</strong>). Có thể dùng nút <strong>Tự tải questions.xlsx</strong>.
-            </div>
-        `;
-    }else{
-        sourceNote = `
-            <div class="box warn">
-                Bạn đang mở bằng <strong>file:///</strong>. Trình duyệt không cho tự đọc file Excel cùng thư mục.<br>
-                Vì vậy Quản trị cần bấm <strong>Nạp / thay file questions.xlsx</strong>.
-            </div>
-        `;
-    }
-
     main.innerHTML = `
         <h2>QUẢN TRỊ HỆ THỐNG</h2>
 
         <div class="box ok">
-            Số câu hỏi hiện có: <strong>${allQuestions.length}</strong>
+            Số câu hỏi hiện có: <strong>${allQuestions.length}</strong><br>
+            Nguồn hiện tại: <strong>${questionSourceText}</strong>
         </div>
 
-        ${sourceNote}
+        <div class="box info">
+            Để mọi người mở link GitHub đều làm bài được, file <strong>questions.xlsx</strong> phải nằm công khai trong cùng thư mục với <strong>index.html</strong>.
+        </div>
 
-        <button onclick="document.getElementById('adminExcelPicker').click()">Nạp / thay file questions.xlsx</button>
-        <button onclick="reloadByMode()">Tự tải questions.xlsx</button>
-        <button onclick="viewResults()">Xem kết quả</button>
-        <button onclick="resetQuestions()">Xóa bộ câu hỏi đã lưu</button>
+        <button onclick="refreshPublicQuestions()">Tải lại từ file công khai questions.xlsx</button>
+        <button onclick="document.getElementById('adminExcelPicker').click()">Nạp tạm file từ máy này</button>
+        <button onclick="viewResults()">Xem kết quả trên máy này</button>
+        <button onclick="resetQuestions()">Xóa cache câu hỏi máy này</button>
         <button onclick="home()">Trang chủ</button>
 
         <input type="file" id="adminExcelPicker" class="hidden" accept=".xlsx,.xls" onchange="handleManualExcel(event)">
@@ -412,7 +485,10 @@ function handleManualExcel(event){
     reader.onload = function(e){
         const ok = parseExcelArrayBuffer(e.target.result);
         if(ok){
-            alert("Đã nạp file Excel thành công: " + allQuestions.length + " câu hợp lệ");
+            questionSourceText = "File tạm nạp từ máy quản trị";
+            saveQuestionCache();
+            cachedQuestions = allQuestions;
+            alert("Đã nạp tạm file Excel thành công trên máy này: " + allQuestions.length + " câu hợp lệ");
             adminPanel();
         }else{
             alert("File Excel không đúng định dạng hoặc chưa đủ 20 câu.");
@@ -421,26 +497,27 @@ function handleManualExcel(event){
     reader.readAsArrayBuffer(file);
 }
 
-async function reloadByMode(){
-    if(location.protocol === "http:" || location.protocol === "https:"){
-        const ok = await loadQuestionsByFetch();
-        if(ok){
-            alert("Đã tự tải file questions.xlsx thành công");
-        }else{
-            alert("Không tự tải được file questions.xlsx. Hãy dùng nút Nạp / thay file questions.xlsx.");
-        }
-        adminPanel();
+async function refreshPublicQuestions(){
+    const ok = await loadPublicQuestions();
+    if(ok){
+        alert("Đã tải lại bộ câu hỏi thành công.");
     }else{
-        alert("Bạn đang mở bằng file:/// nên không thể tự tải. Hãy dùng nút Nạp / thay file questions.xlsx.");
+        alert("Không tải được file công khai questions.xlsx.");
     }
+    adminPanel();
 }
 
 async function loadQuestionsByFetch(){
     try{
-        const response = await fetch(EXCEL_FILE + "?v=" + Date.now());
-        if(!response.ok) throw new Error("Không đọc được file");
+        const response = await fetch(EXCEL_FILE + "?v=" + Date.now(), { cache: "no-store" });
+        if(!response.ok) throw new Error("Không đọc được file công khai");
         const arrayBuffer = await response.arrayBuffer();
-        return parseExcelArrayBuffer(arrayBuffer);
+        const ok = parseExcelArrayBuffer(arrayBuffer);
+        if(ok){
+            saveQuestionCache();
+            cachedQuestions = allQuestions;
+        }
+        return ok;
     }catch(err){
         console.error(err);
         return false;
@@ -480,7 +557,6 @@ function parseExcelArrayBuffer(arrayBuffer){
         }
 
         allQuestions = parsed;
-        saveQuestionCache();
         return true;
     }catch(err){
         console.error(err);
@@ -489,9 +565,10 @@ function parseExcelArrayBuffer(arrayBuffer){
 }
 
 function resetQuestions(){
-    if(confirm("Xóa bộ câu hỏi đã lưu trên trình duyệt?")){
+    if(confirm("Xóa bộ câu hỏi cache trên máy này?")){
         clearQuestionCache();
-        alert("Đã xóa bộ câu hỏi đã lưu.");
+        questionSourceText = "Chưa tải bộ câu hỏi";
+        alert("Đã xóa cache câu hỏi.");
         adminPanel();
     }
 }
@@ -499,6 +576,9 @@ function resetQuestions(){
 function viewResults(){
     let html = `
         <h2>KẾT QUẢ THI</h2>
+        <div class="box warn">
+            Màn hình này chỉ hiển thị kết quả lưu trên <strong>máy hiện tại</strong>.
+        </div>
         <table>
             <tr>
                 <th>Họ tên</th>
@@ -526,21 +606,21 @@ function viewResults(){
     html += `
         </table>
         <button onclick="adminPanel()">Quay lại</button>
-        <button onclick="clearResults()">Xóa toàn bộ kết quả</button>
+        <button onclick="clearResults()">Xóa toàn bộ kết quả máy này</button>
     `;
 
     main.innerHTML = html;
 }
 
 function clearResults(){
-    if(confirm("Bạn có chắc muốn xóa toàn bộ kết quả thi?")){
+    if(confirm("Bạn có chắc muốn xóa toàn bộ kết quả trên máy này?")){
         results = [];
         saveResults();
         viewResults();
     }
 }
 
-home();
+bootApp();
 </script>
 </body>
 </html>
