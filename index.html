@@ -86,10 +86,7 @@ button:hover{background:#8b0000;}
     border:2px solid #28a745;
     font-weight:bold;
 }
-#timer{
-    color:red;
-    font-weight:bold;
-}
+#timer{color:red;font-weight:bold;}
 table{
     width:100%;
     border-collapse:collapse;
@@ -160,17 +157,11 @@ th{
 
 <script>
 const ADMIN_PASSWORD = "101212019";
-const EXCEL_FILE = "questions.xlsx";   // file công khai trên GitHub
+const EXCEL_FILE = "questions.xlsx";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzvuPE8c7uy8SEU9_m_AeV4vWwZ6qNiGfMm3Evp0hZI8JJNEtoG5ajYTmA2D8LWBrk/exec";
 const QUESTIONS_PER_EXAM = 20;
 const EXAM_TIME = 20 * 60;
 
-let results = JSON.parse(localStorage.getItem("results")) || [];
-
-/*
-  Nguồn câu hỏi:
-  1) Ưu tiên file công khai questions.xlsx trên GitHub / server
-  2) Nếu lỗi thì fallback về bộ câu hỏi cache cục bộ (nếu có)
-*/
 let allQuestions = [];
 let cachedQuestions = JSON.parse(localStorage.getItem("cachedQuestions")) || [];
 
@@ -186,21 +177,19 @@ let userUnit = "";
 let selectedAnswer = null;
 let questionSourceText = "Chưa tải bộ câu hỏi";
 
-function saveResults(){
-    localStorage.setItem("results", JSON.stringify(results));
+async function bootApp(){
+    await loadPublicQuestions();
+    home();
 }
+
 function saveQuestionCache(){
     localStorage.setItem("cachedQuestions", JSON.stringify(allQuestions));
 }
+
 function clearQuestionCache(){
     localStorage.removeItem("cachedQuestions");
     cachedQuestions = [];
     allQuestions = [];
-}
-
-async function bootApp(){
-    await loadPublicQuestions();
-    home();
 }
 
 function home(){
@@ -254,6 +243,63 @@ async function loadPublicQuestions(){
             return true;
         }
         questionSourceText = "Lỗi khi tải file questions.xlsx";
+        return false;
+    }
+}
+
+async function loadQuestionsByFetch(){
+    try{
+        const response = await fetch(EXCEL_FILE + "?v=" + Date.now(), { cache: "no-store" });
+        if(!response.ok) throw new Error("Không đọc được file công khai");
+        const arrayBuffer = await response.arrayBuffer();
+        const ok = parseExcelArrayBuffer(arrayBuffer);
+        if(ok){
+            saveQuestionCache();
+            cachedQuestions = allQuestions;
+        }
+        return ok;
+    }catch(err){
+        console.error(err);
+        return false;
+    }
+}
+
+function parseExcelArrayBuffer(arrayBuffer){
+    try{
+        const workbook = XLSX.read(arrayBuffer, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[firstSheetName];
+        const raw = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        const parsed = raw.map(row => {
+            const question = String(row.question || row.Question || "").trim();
+            const A = String(row.A || "").trim();
+            const B = String(row.B || "").trim();
+            const C = String(row.C || "").trim();
+            const D = String(row.D || "").trim();
+            const correctRaw = String(row.correct || row.Correct || "").trim().toUpperCase();
+
+            const map = { A:0, B:1, C:2, D:3 };
+
+            if(!question || !A || !B || !C || !D || map[correctRaw] === undefined){
+                return null;
+            }
+
+            return {
+                question: question,
+                options: [A, B, C, D],
+                correct: map[correctRaw]
+            };
+        }).filter(Boolean);
+
+        if(parsed.length < QUESTIONS_PER_EXAM){
+            return false;
+        }
+
+        allQuestions = parsed;
+        return true;
+    }catch(err){
+        console.error(err);
         return false;
     }
 }
@@ -390,7 +436,7 @@ function submitExam(isTimeUp = false){
     finishExam();
 }
 
-function finishExam(){
+async function finishExam(){
     clearInterval(timer);
 
     score = 0;
@@ -402,24 +448,47 @@ function finishExam(){
 
     const usedTime = Math.floor((Date.now() - startTime) / 1000);
 
-    results.push({
+    const resultData = {
         name: userName,
         unit: userUnit,
         correct: score,
         score: score * 0.5,
         time: usedTime,
-        submittedAt: new Date().toLocaleString("vi-VN")
-    });
+        submittedAt: new Date().toLocaleString("vi-VN"),
+        examCode: "PCCC-2026",
+        totalQuestions: QUESTIONS_PER_EXAM
+    };
 
-    saveResults();
+    const sent = await sendResultToServer(resultData);
 
     main.innerHTML = `
         <h2>KẾT QUẢ</h2>
         <p><strong>${userName} - ${userUnit}</strong></p>
         <p>Số câu đúng: ${score}/${QUESTIONS_PER_EXAM}</p>
         <p>Điểm: ${score * 0.5}</p>
+        <div class="box ${sent ? 'ok' : 'warn'}">
+            ${sent ? 'Đã gửi kết quả lên hệ thống thành công.' : 'Chưa gửi được kết quả lên hệ thống. Kiểm tra lại SCRIPT_URL hoặc quyền Apps Script.'}
+        </div>
         <button onclick="home()">Trang chủ</button>
     `;
+}
+
+async function sendResultToServer(resultData){
+    try{
+        const response = await fetch(SCRIPT_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+            },
+            body: JSON.stringify(resultData)
+        });
+
+        const data = await response.json();
+        return !!data.success;
+    }catch(err){
+        console.error("sendResultToServer error:", err);
+        return false;
+    }
 }
 
 function adminLogin(){
@@ -441,12 +510,12 @@ function adminPanel(){
         </div>
 
         <div class="box info">
-            Để mọi người mở link GitHub đều làm bài được, file <strong>questions.xlsx</strong> phải nằm công khai trong cùng thư mục với <strong>index.html</strong>.
+            Quản trị có thể xem kết quả tập trung từ tất cả thí sinh đã nộp bài.
         </div>
 
         <button onclick="refreshPublicQuestions()">Tải lại từ file công khai questions.xlsx</button>
+        <button onclick="viewResultsOnline()">Xem kết quả thí sinh</button>
         <button onclick="document.getElementById('adminExcelPicker').click()">Nạp tạm file từ máy này</button>
-        <button onclick="viewResults()">Xem kết quả trên máy này</button>
         <button onclick="resetQuestions()">Xóa cache câu hỏi máy này</button>
         <button onclick="home()">Trang chủ</button>
 
@@ -507,60 +576,77 @@ async function refreshPublicQuestions(){
     adminPanel();
 }
 
-async function loadQuestionsByFetch(){
+async function viewResultsOnline(){
+    main.innerHTML = `
+        <h2>KẾT QUẢ THÍ SINH</h2>
+        <div class="box info">Đang tải dữ liệu...</div>
+        <button onclick="adminPanel()">Quay lại</button>
+    `;
+
     try{
-        const response = await fetch(EXCEL_FILE + "?v=" + Date.now(), { cache: "no-store" });
-        if(!response.ok) throw new Error("Không đọc được file công khai");
-        const arrayBuffer = await response.arrayBuffer();
-        const ok = parseExcelArrayBuffer(arrayBuffer);
-        if(ok){
-            saveQuestionCache();
-            cachedQuestions = allQuestions;
-        }
-        return ok;
-    }catch(err){
-        console.error(err);
-        return false;
-    }
-}
+        const url = SCRIPT_URL + "?action=getResults&password=" + encodeURIComponent(ADMIN_PASSWORD) + "&t=" + Date.now();
+        const response = await fetch(url);
+        const data = await response.json();
 
-function parseExcelArrayBuffer(arrayBuffer){
-    try{
-        const workbook = XLSX.read(arrayBuffer, { type: "array" });
-        const firstSheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[firstSheetName];
-        const raw = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-        const parsed = raw.map(row => {
-            const question = String(row.question || row.Question || "").trim();
-            const A = String(row.A || "").trim();
-            const B = String(row.B || "").trim();
-            const C = String(row.C || "").trim();
-            const D = String(row.D || "").trim();
-            const correctRaw = String(row.correct || row.Correct || "").trim().toUpperCase();
-
-            const map = { A:0, B:1, C:2, D:3 };
-
-            if(!question || !A || !B || !C || !D || map[correctRaw] === undefined){
-                return null;
-            }
-
-            return {
-                question: question,
-                options: [A, B, C, D],
-                correct: map[correctRaw]
-            };
-        }).filter(Boolean);
-
-        if(parsed.length < QUESTIONS_PER_EXAM){
-            return false;
+        if(!data.success){
+            main.innerHTML = `
+                <h2>KẾT QUẢ THÍ SINH</h2>
+                <div class="box warn">${data.message || 'Không tải được kết quả'}</div>
+                <button onclick="adminPanel()">Quay lại</button>
+            `;
+            return;
         }
 
-        allQuestions = parsed;
-        return true;
+        let rows = data.data || [];
+
+        rows.sort((a,b) => {
+            const da = new Date(a.createdAt || 0).getTime();
+            const db = new Date(b.createdAt || 0).getTime();
+            return db - da;
+        });
+
+        let html = `
+            <h2>KẾT QUẢ THÍ SINH</h2>
+            <div class="box ok">Tổng số bài đã nộp: <strong>${rows.length}</strong></div>
+            <table>
+                <tr>
+                    <th>Thời gian nộp</th>
+                    <th>Họ tên</th>
+                    <th>Đơn vị</th>
+                    <th>Đúng</th>
+                    <th>Điểm</th>
+                    <th>Thời gian làm bài</th>
+                    <th>Mã kỳ thi</th>
+                </tr>
+        `;
+
+        rows.forEach(r => {
+            html += `
+                <tr>
+                    <td>${r.submittedAt || r.createdAt || ""}</td>
+                    <td>${r.name || ""}</td>
+                    <td>${r.unit || ""}</td>
+                    <td>${r.correct || ""}/${r.totalQuestions || QUESTIONS_PER_EXAM}</td>
+                    <td>${r.score || ""}</td>
+                    <td>${r.time || ""}s</td>
+                    <td>${r.examCode || ""}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+            </table>
+            <button onclick="adminPanel()">Quay lại</button>
+        `;
+
+        main.innerHTML = html;
     }catch(err){
         console.error(err);
-        return false;
+        main.innerHTML = `
+            <h2>KẾT QUẢ THÍ SINH</h2>
+            <div class="box warn">Không kết nối được tới hệ thống lưu kết quả.</div>
+            <button onclick="adminPanel()">Quay lại</button>
+        `;
     }
 }
 
@@ -570,53 +656,6 @@ function resetQuestions(){
         questionSourceText = "Chưa tải bộ câu hỏi";
         alert("Đã xóa cache câu hỏi.");
         adminPanel();
-    }
-}
-
-function viewResults(){
-    let html = `
-        <h2>KẾT QUẢ THI</h2>
-        <div class="box warn">
-            Màn hình này chỉ hiển thị kết quả lưu trên <strong>máy hiện tại</strong>.
-        </div>
-        <table>
-            <tr>
-                <th>Họ tên</th>
-                <th>Đơn vị</th>
-                <th>Đúng</th>
-                <th>Điểm</th>
-                <th>Thời gian</th>
-                <th>Thời điểm nộp</th>
-            </tr>
-    `;
-
-    results.forEach(r => {
-        html += `
-            <tr>
-                <td>${r.name}</td>
-                <td>${r.unit}</td>
-                <td>${r.correct}</td>
-                <td>${r.score}</td>
-                <td>${r.time}s</td>
-                <td>${r.submittedAt || ""}</td>
-            </tr>
-        `;
-    });
-
-    html += `
-        </table>
-        <button onclick="adminPanel()">Quay lại</button>
-        <button onclick="clearResults()">Xóa toàn bộ kết quả máy này</button>
-    `;
-
-    main.innerHTML = html;
-}
-
-function clearResults(){
-    if(confirm("Bạn có chắc muốn xóa toàn bộ kết quả trên máy này?")){
-        results = [];
-        saveResults();
-        viewResults();
     }
 }
 
