@@ -1,0 +1,4960 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý công việc Đội Công tác phòng cháy</title>
+  <style>
+    :root{
+      --primary:#a11919;
+      --primary-dark:#7d1010;
+      --bg:#f4f6fb;
+      --card:#ffffff;
+      --text:#1d2433;
+      --muted:#667085;
+      --border:#dde3ee;
+      --success:#137333;
+      --warning:#b26a00;
+      --danger:#c62828;
+      --shadow:0 10px 30px rgba(16,24,40,.08);
+      --radius:18px;
+      --gold:#ffd700;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"Times New Roman", Times, serif;
+      color:var(--text);
+      min-height:100vh;
+      position:relative;
+      background:#111;
+    }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.35)),
+        url("pccc-bg.png") center/cover no-repeat;
+      filter:blur(7px) brightness(.65);
+      transform:scale(1.04);
+      z-index:-2;
+    }
+    body::after{
+      content:"";
+      position:fixed;
+      inset:0;
+      background:linear-gradient(180deg, rgba(161,25,25,.14), rgba(0,0,0,.08));
+      z-index:-1;
+      pointer-events:none;
+    }
+    .top-unit{
+      text-align:center;
+      color:#fff;
+      padding:18px 12px 4px;
+      line-height:1.35;
+      text-shadow:0 2px 6px rgba(0,0,0,.45);
+      font-weight:700;
+      text-transform:uppercase;
+    }
+    .top-unit .line1,
+    .top-unit .line2{font-size:26px;}
+    .topbar{
+      width:calc(100vw - 32px);
+      max-width:none;
+      margin:26px 16px 0;
+      background:linear-gradient(90deg, var(--primary-dark), var(--primary));
+      color:#fff;
+      padding:18px 24px;
+      box-shadow:0 6px 20px rgba(125,16,16,.2);
+      border-radius:18px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+    .topbar-logo{
+      width:62px;
+      height:62px;
+      border-radius:12px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex:0 0 auto;
+    }
+    .topbar-logo img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      background:transparent;
+    }
+    .topbar-title{
+      min-width:0;
+      flex:1;
+    }
+    .topbar h1{
+      margin:0;
+      font-size:28px;
+      letter-spacing:.3px;
+      text-transform:uppercase;
+    }
+    .topbar .sub{
+      margin-top:6px;
+      opacity:.95;
+      font-size:15px;
+    }
+    .container{
+      width:calc(100vw - 32px);
+      max-width:none;
+      margin:28px 16px;
+      padding:0 0 40px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap:18px;
+    }
+    .grid.expanded{
+      grid-template-columns:1fr;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card-header{
+      padding:16px 20px;
+      border-bottom:1px solid var(--border);
+      background:#fff;
+    }
+    .card-header h2,.card-header h3{
+      margin:0 0 6px 0;
+      font-size:22px;
+    }
+    .card-body{
+      padding:18px 20px 20px;
+    }
+    .muted{color:var(--muted)}
+    .small{font-size:14px}
+    .tiny{font-size:13px}
+    .status{
+      padding:12px 14px;
+      border-radius:12px;
+      margin-bottom:12px;
+      font-size:15px;
+      border:1px solid transparent;
+      line-height:1.45;
+    }
+    .status.info{background:#eef4ff;border-color:#d6e5ff;color:#194185}
+    .status.success{background:#ecfdf3;border-color:#ccebd8;color:#0f6d33}
+    .status.warning{background:#fff8e8;border-color:#f5e2a8;color:#8b5a00}
+    .status.error{background:#fff1f1;border-color:#f0c7c7;color:#a12626}
+    .role-list{
+      display:grid;
+      gap:14px;
+    }
+    .role-btn{
+      width:100%;
+      padding:16px;
+      border:none;
+      border-radius:16px;
+      background:#fff;
+      border:1px solid var(--border);
+      font-size:18px;
+      cursor:pointer;
+      transition:.18s ease;
+      text-align:left;
+    }
+    .role-btn:hover{
+      transform:translateY(-1px);
+      border-color:#d0b1b1;
+      box-shadow:0 12px 20px rgba(16,24,40,.07);
+      color:var(--gold);
+    }
+    .role-btn:hover strong{
+      color:var(--gold);
+    }
+    .role-btn strong{
+      display:block;
+      margin-bottom:4px;
+      color:var(--primary-dark);
+      font-size:20px;
+    }
+    label{
+      display:block;
+      font-weight:700;
+      margin:10px 0 6px;
+    }
+    input, select, textarea{
+      width:100%;
+      padding:12px 14px;
+      border:1px solid #cfd6e1;
+      border-radius:12px;
+      font-size:16px;
+      font-family:inherit;
+      background:#fff;
+    }
+    textarea{
+      min-height:110px;
+      resize:vertical;
+    }
+    .password-row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .password-row input{
+      flex:1;
+      min-width:0;
+    }
+    .password-toggle{
+      flex:0 0 auto;
+      white-space:nowrap;
+      padding:12px 16px;
+    }
+    .week-preview{
+      margin-top:6px;
+      font-size:14px;
+      color:rgba(255,255,255,.82);
+      font-style:italic;
+    }
+    .week-input-wrap{
+      position:relative;
+    }
+    .week-input-display{
+      position:absolute;
+      inset:0 52px 0 14px;
+      display:flex;
+      align-items:center;
+      pointer-events:none;
+      color:var(--text);
+      font-size:16px;
+      font-style:normal;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      z-index:1;
+    }
+    .week-input-display.empty{
+      color:#8c96a8;
+    }
+    .week-input-wrap input[type="week"]{
+      position:relative;
+      z-index:2;
+      background:transparent;
+      color:transparent;
+      caret-color:transparent;
+    }
+    .week-input-wrap input[type="week"]::-webkit-datetime-edit,
+    .week-input-wrap input[type="week"]::-webkit-datetime-edit-fields-wrapper,
+    .week-input-wrap input[type="week"]::-webkit-datetime-edit-text,
+    .week-input-wrap input[type="week"]::-webkit-datetime-edit-month-field,
+    .week-input-wrap input[type="week"]::-webkit-datetime-edit-week-field,
+    .week-input-wrap input[type="week"]::-webkit-datetime-edit-year-field{
+      color:transparent;
+    }
+    .week-input-wrap input[type="week"]::-webkit-calendar-picker-indicator{
+      opacity:1;
+      cursor:pointer;
+    }
+    button{
+      border:none;
+      background:var(--primary);
+      color:#fff;
+      padding:11px 16px;
+      font-size:16px;
+      border-radius:12px;
+      cursor:pointer;
+      font-family:inherit;
+      transition:.18s ease;
+    }
+    button:hover{background:var(--primary-dark)}
+    button:disabled{opacity:.55;cursor:not-allowed;filter:grayscale(.15);}
+    button.secondary{
+      background:#fff;
+      color:var(--text);
+      border:1px solid #ccd4e0;
+    }
+    button.secondary:hover{background:#f7f8fa}
+    button.success{background:var(--success)}
+    button.warning{background:var(--warning)}
+    button.danger{background:var(--danger)}
+    .hidden{display:none !important}
+    .flex{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .pill{
+      padding:9px 12px;
+      border-radius:999px;
+      background:#f6f8fc;
+      border:1px solid #e1e7f0;
+      font-size:15px;
+    }
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+      margin:14px 0 18px;
+    }
+    .summary-box{
+      border:1px solid #e4e9f1;
+      border-radius:16px;
+      padding:16px;
+      background:#fcfdff;
+    }
+    .summary-box .label{font-size:14px;color:var(--muted)}
+    .summary-box .value{font-size:28px;font-weight:700;margin-top:6px}
+    .summary-box.doing{background:#ecfdf3;border-color:#ccebd8}
+    .summary-box.doing .value{color:#0f6d33}
+    .summary-box.done{background:#fff8e8;border-color:#f5e2a8}
+    .summary-box.done .value{color:#8b5a00}
+    .summary-box.overdue{background:#fff1f1;border-color:#f0c7c7}
+    .summary-box.overdue .value{color:#a12626}
+    .filter-grid{
+      display:grid;
+      grid-template-columns:1.8fr 1fr 1fr 1fr 1fr auto;
+      gap:12px;
+      align-items:end;
+      margin:10px 0 16px;
+    }
+    .admin-filter-grid{
+      display:grid;
+      grid-template-columns:1.8fr 1fr 1fr auto;
+      gap:12px;
+      align-items:end;
+      margin:12px 0 16px;
+    }
+    .task-layout{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:18px;
+      align-items:start;
+    }
+    .admin-toolbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:14px;
+      flex-wrap:wrap;
+    }
+    .compact-form-panel .form-grid{
+      grid-template-columns:repeat(4,minmax(0,1fr));
+    }
+    .compact-form-panel textarea{
+      min-height:72px;
+    }
+    .compact-form-panel .split-field textarea{
+      min-height:58px;
+    }
+    .compact-form-panel .split-field .attachment-box{
+      min-height:58px;
+    }
+    .panel-box{
+      border:1px solid #e4e9f1;
+      border-radius:16px;
+      padding:16px;
+      background:#fbfcfe;
+    }
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+    .form-grid .full-col{
+      grid-column:1 / -1;
+    }
+    .split-field{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+      align-items:stretch;
+    }
+    .split-field .field-box{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+    }
+    .split-field textarea{
+      flex:1;
+      min-height:118px;
+    }
+    .split-field .attachment-box{
+      margin-top:0;
+      flex:1;
+      min-height:118px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-start;
+    }
+    .split-field input[type="file"]{
+      width:100%;
+    }
+    .priority-tag,
+    .state-tag{
+      display:inline-flex;
+      align-items:center;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:700;
+      border:1px solid transparent;
+      white-space:nowrap;
+    }
+    .priority-hot{background:#fff1f1;color:#a12626;border-color:#f0c7c7}
+    .priority-high{background:#fff8e8;color:#8b5a00;border-color:#f5e2a8}
+    .priority-normal{background:#eef4ff;color:#194185;border-color:#d6e5ff}
+    .priority-low{background:#f5f7fa;color:#475467;border-color:#d9e0ea}
+    .state-todo{background:#eef4ff;color:#194185;border-color:#d6e5ff}
+    .state-doing{background:#ecfdf3;color:#0f6d33;border-color:#ccebd8}
+    .state-done{background:#fff8e8;color:#8b5a00;border-color:#f5e2a8}
+    .state-hold{background:#f5f7fa;color:#475467;border-color:#d9e0ea}
+    .state-overdue{background:#fff1f1;color:#a12626;border-color:#f0c7c7}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+      background:#fff;
+    }
+    th, td{
+      border-bottom:1px solid #e6ebf3;
+      border-right:1px solid rgba(221,227,238,.6);
+      padding:10px 8px;
+      text-align:center;
+      font-size:15px;
+      vertical-align:middle;
+    }
+    tr > *:last-child{
+      border-right:none;
+    }
+    th{
+      background:#f8fafc;
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+    .table-wrap{
+      border:1px solid #e1e7f0;
+      border-radius:16px;
+      overflow:auto;
+      max-height:600px;
+      background:#fff;
+    }
+    .task-title{font-weight:700; color:#7d1010; text-align:center}
+    .task-desc{color:#475467; margin-top:4px; line-height:1.45; text-align:center}
+    .task-meta{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px}
+    .empty-state{
+      padding:28px 16px;
+      text-align:center;
+      color:var(--muted);
+    }
+    .note-box{
+      padding:14px;
+      border-radius:14px;
+      background:#fff8e8;
+      border:1px solid #f2dba4;
+      color:#7a5100;
+      margin-top:14px;
+      line-height:1.45;
+    }
+    .task-note-cell{
+      min-width:140px;
+    }
+    .week-stacked{
+      display:inline-flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      line-height:1.2;
+      white-space:nowrap;
+      min-width:82px;
+    }
+    .week-stacked .month-line{
+      margin-top:2px;
+    }
+    .task-note-text{
+      line-height:1.45;
+      white-space:pre-wrap;
+      text-align:center;
+    }
+    .task-note-attachment{
+      margin-top:8px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+    }
+    .task-note-image{
+      max-width:180px;
+      max-height:120px;
+      border-radius:10px;
+      border:1px solid #e1e7f0;
+      box-shadow:0 6px 16px rgba(16,24,40,.08);
+    }
+    .task-note-file-link{
+      color:#194185;
+      text-decoration:none;
+      font-weight:700;
+    }
+    .task-note-file-link:hover{
+      text-decoration:underline;
+    }
+    .task-row-soon td{
+      background:#ffe3ee;
+    }
+    .task-row-soon:hover td{
+      background:#ffd6e6;
+    }
+    .due-soon-date{
+      color:#c62828;
+      font-weight:700;
+    }
+    .print-note{
+      margin-top:10px;
+      color:#667085;
+      font-size:13px;
+    }
+    .footer-note{
+      margin-top:12px;
+      font-size:13px;
+      color:#667085;
+      line-height:1.5;
+    }
+    .welcome-illustration{
+      width:100%;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid #e1e7f0;
+      background:#fff;
+      box-shadow:0 10px 24px rgba(16,24,40,.06);
+    }
+    .welcome-illustration img{
+      display:block;
+      width:100%;
+      height:auto;
+    }
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.45);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      z-index:1500;
+      overflow-y:auto;
+    }
+    .modal-card{
+      width:min(430px, 100%);
+      max-height:calc(100vh - 40px);
+      display:flex;
+      flex-direction:column;
+      background:#fff;
+      border-radius:18px;
+      border:1px solid #e1e7f0;
+      box-shadow:0 20px 40px rgba(0,0,0,.22);
+      overflow:hidden;
+    }
+    .modal-card.modal-large{
+      width:min(96vw, 1800px);
+    }
+    .modal-card .form-grid{
+      margin-top:4px;
+    }
+    .modal-card textarea{
+      min-height:88px;
+    }
+    .modal-card .modal-head{
+      padding:18px 20px 10px;
+      border-bottom:1px solid #e6ebf3;
+      background:#fff;
+    }
+    .modal-card .modal-body{
+      padding:18px 20px 20px;
+      overflow-y:auto;
+      overflow-x:hidden;
+      max-height:calc(100vh - 160px);
+      overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-gutter:stable;
+    }
+    .modal-error{
+      margin-top:12px;
+      color:#a12626;
+      font-size:14px;
+      min-height:20px;
+    }
+
+    .attachment-box{
+      margin-top:10px;
+      border:1px dashed #d7deea;
+      border-radius:14px;
+      padding:12px;
+      background:#fcfdff;
+    }
+    .attachment-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .attachment-hint{
+      color:#667085;
+      font-size:13px;
+      line-height:1.45;
+    }
+    .attachment-file-list{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      flex:1;
+      min-width:0;
+    }
+    .attachment-file-item{
+      display:inline-flex;
+      align-items:center;
+      max-width:100%;
+      padding:8px 10px;
+      border-radius:10px;
+      background:#f5f7fa;
+      border:1px solid #d9e0ea;
+      color:#475467;
+      font-size:13px;
+      line-height:1.2;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .task-desc-attachment{
+      margin-top:8px;
+      text-align:center;
+    }
+    .task-desc-image-link{
+      display:inline-block;
+      margin-top:8px;
+    }
+    .task-desc-image{
+      max-width:160px;
+      max-height:110px;
+      border-radius:10px;
+      border:1px solid #e1e7f0;
+      display:block;
+      margin:0 auto;
+    }
+    .task-desc-file-link{
+      display:inline-block;
+      margin-top:8px;
+      padding:8px 12px;
+      border-radius:10px;
+      background:#f5f7fa;
+      border:1px solid #d9e0ea;
+      color:#344054;
+      text-decoration:none;
+      font-weight:700;
+      word-break:break-word;
+    }
+
+    .alert-columns{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:18px;
+      margin-top:14px;
+      align-items:start;
+    }
+    .alert-column{
+      min-width:0;
+      border:1px solid #e1e7f0;
+      border-radius:16px;
+      background:#fbfcfe;
+      padding:14px;
+      height:100%;
+    }
+    .alert-summary-card{
+      border:1px solid #e4e9f1;
+      border-radius:16px;
+      padding:14px 16px;
+      background:#fbfcfe;
+      margin-bottom:12px;
+    }
+    .alert-summary-card h4{
+      margin:0 0 6px;
+      font-size:20px;
+    }
+    .alert-summary-card.overdue{
+      background:#fff1f1;
+      border-color:#f0c7c7;
+    }
+    .alert-summary-card.due-soon{
+      background:#fff4f7;
+      border-color:#f4c7d5;
+    }
+    .alert-summary-count{
+      font-size:28px;
+      font-weight:700;
+      margin-top:4px;
+    }
+    .alert-list{
+      margin-top:12px;
+      border:1px solid #e1e7f0;
+      border-radius:14px;
+      overflow:auto;
+      background:#fff;
+      max-height:58vh;
+    }
+    .alert-list table{
+      margin-top:0;
+    }
+    .alert-empty{
+      padding:18px 14px;
+      text-align:center;
+      color:var(--muted);
+    }
+    .alert-caption{
+      margin-top:4px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.5;
+    }
+    .alert-column-title{
+      margin:0 0 8px;
+      font-size:20px;
+    }
+
+    .copyright{
+      text-align:center;
+      color:#fff;
+      padding:0 16px 22px;
+      font-style:italic;
+      text-shadow:0 2px 6px rgba(0,0,0,.45);
+    }
+
+    body.work-program-full .top-unit,
+    body.work-program-full .topbar{
+      display:none;
+    }
+    body.work-program-full .container{
+      width:100vw;
+      margin:0;
+      padding:0;
+    }
+    body.work-program-full .grid{
+      display:block;
+    }
+    body.work-program-full #accessCard{
+      display:none !important;
+    }
+    body.work-program-full .card{
+      min-height:100vh;
+      border-radius:0;
+      border:none;
+      box-shadow:none;
+    }
+    body.work-program-full .card-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 18px;
+    }
+    body.work-program-full .card-body{
+      padding:0;
+    }
+    .work-program-title-date{
+      display:inline-flex;
+      margin-left:12px;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#fff8e8;
+      border:1px solid #f5e2a8;
+      color:#8b5a00;
+      font-size:15px;
+      font-weight:700;
+      vertical-align:middle;
+      white-space:nowrap;
+    }
+    .work-program-date-btn{
+      appearance:none;
+      border:1px solid #f5e2a8;
+      background:#fff8e8;
+      color:#8b5a00;
+      border-radius:999px;
+      padding:4px 10px;
+      font:inherit;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .work-program-date-btn:hover{
+      filter:brightness(0.98);
+      box-shadow:0 0 0 3px rgba(139,90,0,.08);
+    }
+    .program-th-date{
+      display:block;
+      margin-top:5px;
+      color:#667085;
+      font-size:13px;
+      font-weight:600;
+      line-height:1.25;
+      white-space:normal;
+    }
+    .work-program-toolbar{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      gap:10px;
+      padding:12px 18px 0;
+      background:#fff;
+    }
+    .work-program-note{
+      color:var(--muted);
+      font-size:14px;
+      text-align:left;
+      margin-right:auto;
+    }
+    #workProgramPanel .table-wrap{
+      height:calc(100vh - 110px);
+      max-height:none;
+      border-radius:0;
+      border-left:none;
+      border-right:none;
+      border-bottom:none;
+      margin-top:12px;
+    }
+    #workProgramPanel table{
+      margin-top:0;
+      min-width:1100px;
+    }
+    #workProgramPanel th,
+    #workProgramPanel td{
+      font-size:16px;
+      line-height:1.35;
+      padding:13px 10px;
+      text-align:center;
+      vertical-align:middle;
+    }
+    #workProgramPanel td:nth-child(2){
+      text-align:center;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    #workProgramPanel td[data-editable-program="true"]{
+      cursor:pointer;
+      text-align:center;
+      min-width:300px;
+      background:#fffdf7;
+    }
+    #workProgramPanel td[data-editable-program="true"].locked{
+      cursor:not-allowed;
+      background:#f5f7fa;
+      color:#667085;
+    }
+    #programBody tr:nth-child(odd) td{
+      background:#fff;
+    }
+    #programBody tr:nth-child(even) td{
+      background:#fffbe8;
+    }
+    #programBody tr:nth-child(odd) td[data-editable-program="true"]{
+      background:#fffdf7;
+    }
+    #programBody tr:nth-child(even) td[data-editable-program="true"]{
+      background:#fff7cc;
+    }
+    #programBody tr:hover td,
+    #programBody tr:hover td[data-editable-program="true"]{
+      background:#fff0a8;
+    }
+    #programBody tr td[data-editable-program="true"].locked{
+      color:#667085;
+    }
+    .program-back-button{
+      flex:0 0 auto;
+      white-space:nowrap;
+    }
+    .program-cell-split{
+      display:grid;
+      grid-template-rows:1fr 1fr;
+      min-height:86px;
+      width:100%;
+    }
+    .program-cell-line{
+      display:grid;
+      grid-template-columns:58px minmax(0,1fr);
+      gap:8px;
+      align-items:center;
+      text-align:center;
+      min-height:42px;
+      padding:5px 0;
+    }
+    .program-cell-line + .program-cell-line{
+      border-top:1px dashed rgba(102,112,133,.35);
+    }
+    .program-cell-label{
+      color:#8b5a00;
+      font-weight:700;
+      white-space:nowrap;
+      align-self:center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100%;
+    }
+    .program-cell-text{
+      color:var(--text);
+      white-space:pre-wrap;
+      word-break:break-word;
+      min-height:22px;
+      text-align:center;
+    }
+    .program-cell-text.empty{
+      color:#a0a8b5;
+      font-style:italic;
+    }
+    .program-split-editor{
+      display:grid;
+      gap:0;
+      width:100%;
+      border:1px solid var(--primary);
+      border-radius:10px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .program-editor-row{
+      display:grid;
+      grid-template-columns:64px minmax(0,1fr);
+      gap:8px;
+      align-items:stretch;
+      padding:8px;
+    }
+    .program-editor-row + .program-editor-row{
+      border-top:1px dashed rgba(102,112,133,.35);
+    }
+    .program-editor-label{
+      color:#8b5a00;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100%;
+      padding-top:0;
+    }
+    .program-cell-editor{
+      width:100%;
+      min-height:58px;
+      resize:vertical;
+      border:1px solid #d7deea;
+      border-radius:8px;
+      padding:8px 10px;
+      font-family:"Times New Roman", Times, serif;
+      font-size:16px;
+      line-height:1.35;
+      outline:none;
+      background:#fff;
+    }
+    .program-cell-editor:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px rgba(139,30,30,.08);
+    }
+    .program-report-modal{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(16,24,40,.48)}
+    .program-report-card{width:min(1180px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(16,24,40,.28);border:1px solid rgba(139,30,30,.16)}
+    .program-report-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;background:#fff;border-bottom:1px solid #edf0f5}
+    .program-report-head h3{margin:0;font-size:24px;color:var(--primary)}
+    .program-report-body{padding:18px}
+    .program-report-filter{display:grid;grid-template-columns:repeat(2,minmax(180px,240px)) auto;gap:12px;align-items:end;margin-bottom:16px;padding:14px;border:1px solid #edf0f5;border-radius:14px;background:#fffdf7}
+    .program-report-grid{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;align-items:start}
+    .program-report-people{border:1px solid #edf0f5;border-radius:14px;overflow:hidden;background:#fff}
+    .program-report-people-title{padding:12px 14px;font-weight:800;background:#f8fafc;border-bottom:1px solid #edf0f5}
+    .program-report-person-btn{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 14px;border:0;border-bottom:1px solid #edf0f5;border-radius:0;background:#fff;color:var(--text);text-align:left;font-family:"Times New Roman",Times,serif;font-size:16px;cursor:pointer}
+    .program-report-person-btn:hover,.program-report-person-btn.active{background:#fff3e0;color:#7a1b1b}
+    .program-report-person-count{flex:0 0 auto;min-width:26px;padding:2px 7px;border-radius:999px;background:#eef2f7;color:#475467;font-size:13px;text-align:center}
+    .program-report-result{min-height:320px;border:1px solid #edf0f5;border-radius:14px;background:#fff;overflow:hidden}
+    .program-report-result-head{padding:13px 15px;background:#f8fafc;border-bottom:1px solid #edf0f5;font-weight:800}
+    .program-report-empty{padding:22px;color:var(--muted);text-align:center}
+    .program-report-actions{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+    .program-report-table{width:100%;border-collapse:collapse}
+    .program-report-table th,.program-report-table td{border:1px solid #edf0f5;padding:10px 12px;vertical-align:middle;text-align:center}
+    .program-report-table th{background:#f8fafc;text-align:center;font-weight:800}
+    .program-report-table td:first-child{width:70px;text-align:center;font-weight:700}
+    .program-report-bullet{display:inline-block;margin:0;padding-left:18px;text-align:left}
+    .program-report-bullet li{margin:0;line-height:1.45}
+    @media (max-width:760px){.program-report-filter{grid-template-columns:1fr}.program-report-grid{grid-template-columns:1fr}}
+    @media (max-width: 640px){
+      body.work-program-full .card-header{align-items:flex-start;flex-direction:column;}
+      .work-program-toolbar{align-items:flex-start;flex-direction:column;}
+      .work-program-note{margin-right:0;}
+      #workProgramPanel .table-wrap{height:calc(100vh - 150px);}
+    }
+
+    @media (max-width: 1120px){
+      .filter-grid{grid-template-columns:1fr 1fr;}
+      .admin-filter-grid{grid-template-columns:1fr 1fr;}
+      .task-layout{grid-template-columns:1fr}
+      .compact-form-panel .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+      .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .topbar{margin-left:16px;margin-right:16px;}
+    }
+    @media (max-width: 640px){
+      .summary-grid{grid-template-columns:1fr}
+      .topbar{flex-direction:column;align-items:flex-start}
+      .topbar h1{font-size:22px}
+      .top-unit .line1,
+      .top-unit .line2{font-size:22px}
+      .filter-grid,.admin-filter-grid,.form-grid,.compact-form-panel .form-grid,.alert-columns{grid-template-columns:1fr}
+      .split-field{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .split-field textarea{min-height:96px}
+      .split-field .attachment-box{min-height:96px;padding:10px}
+      .modal-card .modal-body{padding:16px}
+    }
+    @media (max-width: 480px){
+      .split-field{grid-template-columns:1fr}
+      .split-field textarea{min-height:88px}
+      .split-field .attachment-box{min-height:auto}
+    }
+    .lee-alert-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      padding: 16px;
+    }
+    .lee-alert-backdrop.show { display: flex; }
+    .lee-alert-box {
+      width: min(420px, 100%);
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.35);
+      overflow: hidden;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+    }
+    .lee-alert-title {
+      font-weight: 800;
+      padding: 14px 18px 8px;
+      color: #0f172a;
+    }
+    .lee-alert-message {
+      padding: 0 18px 16px;
+      color: #334155;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .lee-alert-actions {
+      padding: 12px 18px 16px;
+      display: flex;
+      justify-content: flex-end;
+      border-top: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+  </style>
+</head>
+<body>
+  <div class="lee-alert-backdrop" id="leeAlertBackdrop" role="dialog" aria-modal="true" aria-labelledby="leeAlertTitle">
+    <div class="lee-alert-box">
+      <div class="lee-alert-title" id="leeAlertTitle">LeeMinNguyen cho biết:</div>
+      <div class="lee-alert-message" id="leeAlertMessage"></div>
+      <div class="lee-alert-actions">
+        <button type="button" id="leeAlertOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="top-unit">
+    <div class="line1">Phòng Cảnh sát PCCC và CNCH</div>
+    <div class="line2">Đội Công tác phòng cháy</div>
+  </div>
+
+  <div class="topbar">
+    <div class="topbar-logo">
+      <img src="logo-pccc.png" alt="Logo Cảnh sát PCCC" />
+    </div>
+    <div class="topbar-title">
+      <h1>QUẢN LÝ CÔNG VIỆC ĐỘI CÔNG TÁC PHÒNG CHÁY</h1>
+      <div class="sub"></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="grid" id="mainGrid">
+      <div class="card" id="accessCard">
+        <div class="card-body">
+          <div id="loadStatus" class="status info">Đang kết nối kho dữ liệu công việc...</div>
+
+          <div class="role-list" id="roleList">
+            <button class="role-btn" id="btnViewerMode">
+              <strong>Xem công việc</strong>
+            </button>
+
+            <button class="role-btn" id="btnWorkProgramMode">
+              <strong>Chương trình công tác</strong>
+            </button>
+
+            <button class="role-btn" id="btnAdminMode">
+              <strong>Admin</strong>
+            </button>
+          </div>
+          <input id="adminPassword" type="hidden" value="" />
+          <input id="viewerPassword" type="hidden" value="" />
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header hidden" id="mainHeader">
+          <h2 id="mainTitle"></h2>
+          <div class="muted small" id="mainSub"></div>
+        </div>
+        <div class="card-body">
+
+          <div id="welcomePanel">
+            <div class="welcome-illustration">
+              <img src="ready-exam.png" alt="Quản lý công việc đội" />
+            </div>
+          </div>
+
+          <div id="viewerPanel" class="hidden">
+            <div class="flex" style="justify-content:flex-end; margin-bottom:6px">
+              <div class="flex">
+                <button id="btnPrintWeeklyReportViewer" class="secondary">In báo cáo</button>
+                                <button id="btnBackHome" class="secondary">Quay lại</button>
+              </div>
+            </div>
+
+            <div class="summary-grid" id="viewerSummaryGrid">
+              <div class="summary-box">
+                <div class="label">Tổng công việc</div>
+                <div class="value" id="statTotal">0</div>
+              </div>
+              <div class="summary-box doing">
+                <div class="label">Đang thực hiện</div>
+                <div class="value" id="statDoing">0</div>
+              </div>
+              <div class="summary-box done">
+                <div class="label">Hoàn thành</div>
+                <div class="value" id="statDone">0</div>
+              </div>
+              <div class="summary-box overdue">
+                <div class="label">Quá hạn</div>
+                <div class="value" id="statOverdue">0</div>
+              </div>
+            </div>
+
+            <div class="panel-box">
+              <div class="filter-grid">
+                <div>
+                  <label for="filterKeyword">Tìm kiếm</label>
+                  <input id="filterKeyword" type="text" placeholder="Tìm theo tên công việc, nội dung, người phụ trách..." />
+                </div>
+                <div>
+                  <label for="filterAssignee">Người phụ trách</label>
+                  <select id="filterAssignee">
+                    <option value="">Tất cả</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="filterWeek">Tuần giao</label>
+                  <select id="filterWeek">
+                    <option value="">Tất cả</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="filterStatus">Trạng thái</label>
+                  <select id="filterStatus">
+                    <option value="">Tất cả</option>
+                    <option value="Đang thực hiện">Đang thực hiện</option>
+                    <option value="Hoàn thành">Hoàn thành</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="filterSoonDue">Ghi chú</label>
+                  <select id="filterSoonDue">
+                    <option value="">Tất cả</option>
+                    <option value="yes">Chỉ việc sắp hết hạn</option>
+                  </select>
+                </div>
+                <div>
+                  <label>&nbsp;</label>
+                  <button id="btnClearFilters" class="secondary">Xóa lọc</button>
+                </div>
+              </div>
+
+              
+              <div class="table-wrap">
+                <table class="viewer-task-table">
+                  <thead>
+                    <tr>
+                      <th>STT</th>
+                      <th>Công việc</th>
+                      <th>Người phụ trách</th>
+                      <th>Tuần giao</th>
+                      <th>Hạn hoàn thành</th>
+                      <th>Trạng thái</th>
+                      <th>Ghi chú</th>
+                    </tr>
+                  </thead>
+                  <tbody id="viewerTaskBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="adminPanel" class="hidden">
+            <div class="admin-toolbar">
+              
+              <div class="flex">
+                <button id="btnPrintWeeklyReportAdmin" class="secondary">In báo cáo</button>
+                                <button id="btnExportCsv" class="secondary">Xuất Excel</button>
+                <button id="btnLogoutAdmin" class="secondary">Đăng xuất</button>
+              </div>
+            </div>
+
+            <div class="panel-box compact-form-panel" style="margin-bottom:16px">
+              <h3 style="margin:0 0 6px;font-size:22px">Biểu mẫu công việc</h3>
+              <div class="muted small">Nhập đầy đủ thông tin để tạo mới công việc.</div>
+              <input id="taskId" type="hidden" />
+              <div class="form-grid" style="margin-top:10px">
+                <div class="full-col">
+                  <label for="taskTitle">Tên công việc</label>
+                  <input id="taskTitle" type="text" placeholder="Ví dụ: Kiểm tra cơ sở tháng 3" />
+                </div>
+                <div>
+                  <label for="taskAssignee">Người phụ trách</label>
+                  <select id="taskAssignee">
+                    <option value="">Chọn người phụ trách</option>
+                    <option value="Sơn">Sơn</option>
+                    <option value="Thanh">Thanh</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Tùng">Tùng</option>
+                    <option value="Uyên">Uyên</option>
+                    <option value="M. Quang">M. Quang</option>
+                    <option value="X. Quang">X. Quang</option>
+                    <option value="Nguyên">Nguyên</option>
+                    <option value="Quyền Anh">Quyền Anh</option>
+                    <option value="Tuyển">Tuyển</option>
+                    <option value="Phương">Phương</option>
+                    <option value="__custom__">Tự điền</option>
+                  </select>
+                  <input id="taskAssigneeCustom" class="hidden" type="text" placeholder="Nhập người phụ trách" style="margin-top:8px" />
+                </div>
+                <div>
+                  <label for="taskAssignedWeek">Thời gian giao (Tuần/Tháng)</label>
+                  <div class="week-input-wrap">
+                    <input id="taskAssignedWeek" type="week" />
+                    <div id="taskAssignedWeekInlineDisplay" class="week-input-display empty">Chọn Tuần/Tháng</div>
+                  </div>
+                  <div id="taskAssignedWeekDisplay" class="week-preview">-</div>
+                </div>
+                <div>
+                  <label for="taskDueDate">Hạn hoàn thành</label>
+                  <input id="taskDueDate" type="date" />
+                </div>
+                <div>
+                  <label for="taskStatus">Trạng thái</label>
+                  <select id="taskStatus">
+                    <option value="Đang thực hiện" selected>Đang thực hiện</option>
+                    <option value="Hoàn thành">Hoàn thành</option>
+                  </select>
+                </div>
+                <div class="full-col split-field">
+                  <div class="field-box">
+                    <label for="taskDescription">Nội dung công việc</label>
+                    <textarea id="taskDescription" placeholder="Mô tả ngắn gọn yêu cầu, đầu việc, lưu ý thực hiện..."></textarea>
+                  </div>
+                  <div class="field-box">
+                    <label for="taskDescriptionImage">Tệp đính kèm</label>
+                    <div class="attachment-box">
+                      <input id="taskDescriptionImage" type="file" accept="image/*,application/pdf,.pdf" multiple />
+                      <div class="attachment-actions">
+                        <button id="btnRemoveTaskImage" type="button" class="secondary">Xóa tệp</button>
+                        <div id="taskImagePreview" class="attachment-file-list"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="full-col split-field">
+                  <div class="field-box">
+                    <label for="taskNote">Ghi chú</label>
+                    <textarea id="taskNote" placeholder="Nhập ghi chú bổ sung, yêu cầu phối hợp, văn bản liên quan..."></textarea>
+                  </div>
+                  <div class="field-box">
+                    <label for="taskNoteFile">Tệp đính kèm cho ghi chú</label>
+                    <div class="attachment-box">
+                      <input id="taskNoteFile" type="file" accept="image/*,application/pdf,.pdf" multiple />
+                      <div class="attachment-actions">
+                        <button id="btnRemoveTaskNoteFile" type="button" class="secondary">Xóa tệp</button>
+                        <div id="taskNotePreview" class="attachment-file-list"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex" style="margin-top:14px">
+                <button id="btnSaveTask" class="success">Lưu công việc</button>
+                <button id="btnResetForm" class="secondary">Tạo mới</button>
+              </div>
+              <div id="adminSaveStatus" class="status info" style="margin-top:14px">Sẵn sàng cập nhật dữ liệu.</div>
+            </div>
+
+            <div class="summary-grid">
+              <div class="summary-box">
+                <div class="label">Tổng công việc</div>
+                <div class="value" id="adminStatTotal">0</div>
+              </div>
+              <div class="summary-box doing">
+                <div class="label">Đang thực hiện</div>
+                <div class="value" id="adminStatDoing">0</div>
+              </div>
+              <div class="summary-box done">
+                <div class="label">Hoàn thành</div>
+                <div class="value" id="adminStatDone">0</div>
+              </div>
+              <div class="summary-box overdue">
+                <div class="label">Quá hạn</div>
+                <div class="value" id="adminStatOverdue">0</div>
+              </div>
+            </div>
+
+            <div class="panel-box">
+              <div class="flex" style="justify-content:space-between; margin-bottom:6px">
+                <h3 style="margin:0;font-size:22px">Danh sách quản trị</h3>
+                              </div>
+              <div class="admin-filter-grid">
+                <div>
+                  <label for="adminFilterKeyword">Công việc</label>
+                  <input id="adminFilterKeyword" type="text" placeholder="Tìm theo tên công việc hoặc nội dung..." />
+                </div>
+                <div>
+                  <label for="adminFilterAssignee">Người phụ trách</label>
+                  <select id="adminFilterAssignee">
+                    <option value="">Tất cả</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="adminFilterWeek">Tuần giao</label>
+                  <select id="adminFilterWeek">
+                    <option value="">Tất cả</option>
+                  </select>
+                </div>
+                <div>
+                  <label>&nbsp;</label>
+                  <button id="btnClearAdminFilters" class="secondary">Xóa lọc</button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>STT</th>
+                      <th>Công việc</th>
+                      <th>Phụ trách</th>
+                      <th>Tuần giao</th>
+                      <th>Hạn</th>
+                      <th>Trạng thái</th>
+                      <th>Ghi chú</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminTaskBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="workProgramPanel" class="hidden">
+            <div class="work-program-toolbar">
+              <button id="btnOpenProgramReport" class="secondary program-back-button">Báo cáo</button>
+              <button id="btnExportWorkProgramTable" class="secondary program-back-button">Xuất Excel</button>
+              <button id="btnPrintWorkProgramTable" class="secondary program-back-button">In</button>
+              <button id="btnBackHomeFromProgram" class="secondary program-back-button">Quay lại</button>
+            </div>
+            <div class="table-wrap">
+              <table id="workProgramTable">
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Họ và tên</th>
+                    <th>Kết quả công việc hôm trước<span class="program-th-date" id="programPreviousDateLabel"></span></th>
+                    <th>Lịch công tác hôm nay<span class="program-th-date" id="programTodayDateLabel"></span></th>
+                    <th>Kết quả công việc hôm nay<span class="program-th-date" id="programTodayResultDateLabel"></span></th>
+                    <th>Dự kiến lịch hôm sau<span class="program-th-date" id="programTomorrowDateLabel"></span></th>
+                  </tr>
+                </thead>
+                <tbody id="programBody">
+                    <tr data-person="Phạm Thái Sơn">
+                      <td>1</td>
+                      <td>Phạm Thái Sơn</td>
+                      <td data-field="previous" data-editable-program="true" data-person="Phạm Thái Sơn" title="Double click để nhập kết quả công việc hôm trước trước 07:30 ngày hôm sau"></td>
+                      <td data-field="today" data-editable-program="true" data-person="Phạm Thái Sơn" title="Double click để nhập lịch công tác hôm nay trước 07:30 cùng ngày"></td>
+                      <td data-field="todayResult" data-editable-program="true" data-person="Phạm Thái Sơn" title="Double click để nhập kết quả công việc hôm nay trong ngày"></td>
+                      <td data-field="tomorrow" data-editable-program="true" data-person="Phạm Thái Sơn" title="Double click để nhập dự kiến lịch hôm sau trong ngày"></td>
+                    </tr>
+                    <tr data-person="Phan Văn Thanh">
+                      <td>2</td>
+                      <td>Phan Văn Thanh</td>
+                      <td data-field="previous" data-editable-program="true" data-person="Phan Văn Thanh" title="Double click để nhập kết quả công việc hôm trước trước 07:30 ngày hôm sau"></td>
+                      <td data-field="today" data-editable-program="true" data-person="Phan Văn Thanh" title="Double click để nhập lịch công tác hôm nay trước 07:30 cùng ngày"></td>
+                      <td data-field="todayResult" data-editable-program="true" data-person="Phan Văn Thanh" title="Double click để nhập kết quả công việc hôm nay trong ngày"></td>
+                      <td data-field="tomorrow" data-editable-program="true" data-person="Phan Văn Thanh" title="Double click để nhập dự kiến lịch hôm sau trong ngày"></td>
+                    </tr>
+                    <tr data-person="Nguyễn Thành Nam">
+                      <td>3</td>
+                      <td>Nguyễn Thành Nam</td>
+                      <td data-field="previous" data-editable-program="true" data-person="Nguyễn Thành Nam" title="Double click để nhập kết quả công việc hôm trước trước 07:30 ngày hôm sau"></td>
+                      <td data-field="today" data-editable-program="true" data-person="Nguyễn Thành Nam" title="Double click để nhập lịch công tác hôm nay trước 07:30 cùng ngày"></td>
+                      <td data-field="todayResult" data-editable-program="true" data-person="Nguyễn Thành Nam" title="Double click để nhập kết quả công việc hôm nay trong ngày"></td>
+                      <td data-field="tomorrow" data-editable-program="true" data-person="Nguyễn Thành Nam" title="Double click để nhập dự kiến lịch hôm sau trong ngày"></td>
+                    </tr>
+                    <tr data-person="Phạm Thanh Tùng">
+                      <td>4</td>
+                      <td>Phạm Thanh Tùng</td>
+                      <td data-field="previous" data-editable-program="true" data-person="Phạm Thanh Tùng" title="Double click để nhập kết quả công việc hôm trước trước 07:30 ngày hôm sau"></td>
+                      <td data-field="today" data-editable-program="true" data-person="Phạm Thanh Tùng" title="Double click để nhập lịch công tác hôm nay trước 07:30 cùng ngày"></td>
+                      <td data-field="todayResult" data-editable-program="true" data-person="Phạm Thanh Tùng" title="Double click để nhập kết quả công việc hôm nay trong ngày"></td>
+                      <td data-field="tomorrow" data-editable-program="true" data-person="Phạm Thanh Tùng" title="Double click để nhập dự kiến lịch hôm sau trong ngày"></td>
+                    </tr>
+                    <tr data-person="Ngô Thị Uyên">
+                      <td>5</td>
+                      <td>Ngô Thị Uyên</td>
+                      <td data-field="previous" data-editable-program="true" data-person="Ngô Thị Uyên" title="Double click để nhập kết quả công việc hôm trước trước 07:30 ngày hôm sau"></td>
+                      <td data-field="today" data-editable-program="true" data-person="Ngô Thị Uyên" title="Double click để nhập lịch công tác hôm nay trước 07:30 cùng ngày"></td>
+                      <td data-field="todayResult" data-editable-program="true" data-person="Ngô Thị Uyên" title="Double click để nhập kết quả công việc hôm nay trong ngày"></td>
+                      <td data-field="tomorrow" data-editable-program="true" data-person="Ngô Thị Uyên" title="Double click để nhập dự kiến lịch hôm sau trong ngày"></td>
+                    </tr>
+                    <tr data-person="Hoàng Minh Quang">
+                      <td>6</td>
+                      <td>Hoàng Minh Quang</td>
+                      <td data-field="previous" data-editable-program="true" data-person="Hoàng Minh Quang" title="Double click để nhập kết quả công việc hôm trước trước 07:30 ngày hôm sau"></td>
+                      <td data-field="today" data-editable-program="true" data-person="Hoàng Minh Quang" title="Double click để nhập lịch công tác hôm nay trước 07:30 cùng ngày"></td>
+                      <td data-field="todayResult" data-editable-program="true" data-person="Hoàng Minh Quang" title="Double click để nhập kết quả công việc hôm nay trong ngày"></td>
+                      <td data-field="tomorrow" data-editable-program="true" data-person="Hoàng Minh Quang" title="Double click để nhập dự kiến lịch hôm sau trong ngày"></td>
+                    </tr>
+                    <tr data-person="Nguyễn Xuân Quang">
+                      <td>7</td>
+                      <td>Nguyễn Xuân Quang</td>
+                      <td data-field="previous" data-editable-program="true" data-person="Nguyễn Xuân Quang" title="Double click để nhập kết quả công việc hôm trước trước 07:30 ngày hôm sau"></td>
+                      <td data-field="today" data-editable-program="true" data-person="Nguyễn Xuân Quang" title="Double click để nhập lịch công tác hôm nay trước 07:30 cùng ngày"></td>
+                      <td data-field="todayResult" data-editable-program="true" data-person="Nguyễn Xuân Quang" title="Double click để nhập kết quả công việc hôm nay trong ngày"></td>
+                      <td data-field="tomorrow" data-editable-program="true" data-person="Nguyễn Xuân Quang" title="Double click để nhập dự kiến lịch hôm sau trong ngày"></td>
+                    </tr>
+                    <tr data-person="Nguyễn Văn Nguyên">
+                      <td>8</td>
+                      <td>Nguyễn Văn Nguyên</td>
+                      <td data-field="previous" data-editable-program="true" data-person="Nguyễn Văn Nguyên" title="Double click để nhập kết quả công việc hôm trước trước 07:30 ngày hôm sau"></td>
+                      <td data-field="today" data-editable-program="true" data-person="Nguyễn Văn Nguyên" title="Double click để nhập lịch công tác hôm nay trước 07:30 cùng ngày"></td>
+                      <td data-field="todayResult" data-editable-program="true" data-person="Nguyễn Văn Nguyên" title="Double click để nhập kết quả công việc hôm nay trong ngày"></td>
+                      <td data-field="tomorrow" data-editable-program="true" data-person="Nguyễn Văn Nguyên" title="Double click để nhập dự kiến lịch hôm sau trong ngày"></td>
+                    </tr>
+                    <tr data-person="Phạm Quyền Anh">
+                      <td>9</td>
+                      <td>Phạm Quyền Anh</td>
+                      <td data-field="previous" data-editable-program="true" data-person="Phạm Quyền Anh" title="Double click để nhập kết quả công việc hôm trước trước 07:30 ngày hôm sau"></td>
+                      <td data-field="today" data-editable-program="true" data-person="Phạm Quyền Anh" title="Double click để nhập lịch công tác hôm nay trước 07:30 cùng ngày"></td>
+                      <td data-field="todayResult" data-editable-program="true" data-person="Phạm Quyền Anh" title="Double click để nhập kết quả công việc hôm nay trong ngày"></td>
+                      <td data-field="tomorrow" data-editable-program="true" data-person="Phạm Quyền Anh" title="Double click để nhập dự kiến lịch hôm sau trong ngày"></td>
+                    </tr>
+                    <tr data-person="Phí Văn Tuyển">
+                      <td>10</td>
+                      <td>Phí Văn Tuyển</td>
+                      <td data-field="previous" data-editable-program="true" data-person="Phí Văn Tuyển" title="Double click để nhập kết quả công việc hôm trước trước 07:30 ngày hôm sau"></td>
+                      <td data-field="today" data-editable-program="true" data-person="Phí Văn Tuyển" title="Double click để nhập lịch công tác hôm nay trước 07:30 cùng ngày"></td>
+                      <td data-field="todayResult" data-editable-program="true" data-person="Phí Văn Tuyển" title="Double click để nhập kết quả công việc hôm nay trong ngày"></td>
+                      <td data-field="tomorrow" data-editable-program="true" data-person="Phí Văn Tuyển" title="Double click để nhập dự kiến lịch hôm sau trong ngày"></td>
+                    </tr>
+                    <tr data-person="Tạ Minh Phương">
+                      <td>11</td>
+                      <td>Tạ Minh Phương</td>
+                      <td data-field="previous" data-editable-program="true" data-person="Tạ Minh Phương" title="Double click để nhập kết quả công việc hôm trước trước 07:30 ngày hôm sau"></td>
+                      <td data-field="today" data-editable-program="true" data-person="Tạ Minh Phương" title="Double click để nhập lịch công tác hôm nay trước 07:30 cùng ngày"></td>
+                      <td data-field="todayResult" data-editable-program="true" data-person="Tạ Minh Phương" title="Double click để nhập kết quả công việc hôm nay trong ngày"></td>
+                      <td data-field="tomorrow" data-editable-program="true" data-person="Tạ Minh Phương" title="Double click để nhập dự kiến lịch hôm sau trong ngày"></td>
+                    </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+            <div id="programReportModal" class="program-report-modal hidden" role="dialog" aria-modal="true" aria-labelledby="programReportTitle">
+              <div class="program-report-card">
+                <div class="program-report-head">
+                  <h3 id="programReportTitle">Báo cáo kết quả công việc</h3>
+                  <button id="btnCloseProgramReport" class="secondary">Đóng</button>
+                </div>
+                <div class="program-report-body">
+                  <div class="program-report-filter">
+                    <div><label for="programReportFrom">Từ ngày</label><input id="programReportFrom" type="date" /></div>
+                    <div><label for="programReportTo">Đến ngày</label><input id="programReportTo" type="date" /></div>
+                    <div class="program-report-actions">
+                      <button id="btnExportProgramReport" class="primary">Xuất Excel</button>
+                      <button id="btnPrintProgramReport" class="secondary">In</button>
+                    </div>
+                  </div>
+                  <div class="program-report-grid">
+                    <div class="program-report-people">
+                      <div class="program-report-people-title">Danh sách cán bộ</div>
+                      <div id="programReportPeople"></div>
+                    </div>
+                    <div class="program-report-result">
+                      <div class="program-report-result-head" id="programReportResultTitle">Chọn cán bộ để xem thống kê</div>
+                      <div id="programReportResult" class="program-report-empty">Ấn vào tên từng cán bộ để xem kết quả công việc trong khoảng thời gian đã chọn.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewerLoginModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 style="margin:0;font-size:24px">Đăng nhập xem công việc</h3>
+        <div class="muted small" style="margin-top:6px">Nhập mật khẩu để xem danh sách công việc.</div>
+      </div>
+      <div class="modal-body">
+        <label for="viewerPasswordInput">Mật khẩu</label>
+        <div class="password-row">
+          <input id="viewerPasswordInput" type="password" placeholder="Nhập mật khẩu xem công việc" />
+          <button id="btnToggleViewerPassword" type="button" class="secondary password-toggle">Hiện mật khẩu</button>
+        </div>
+        <div id="viewerModalError" class="modal-error"></div>
+        <div class="flex" style="justify-content:flex-end; margin-top:8px">
+          <button id="btnCancelViewerLogin" class="secondary">Hủy</button>
+          <button id="btnSubmitViewerLogin">Đăng nhập</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminLoginModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 style="margin:0;font-size:24px">Đăng nhập Admin</h3>
+        <div class="muted small" style="margin-top:6px">Nhập mật khẩu để quản lý công việc.</div>
+      </div>
+      <div class="modal-body">
+        <label for="adminPasswordInput">Mật khẩu</label>
+        <div class="password-row">
+          <input id="adminPasswordInput" type="password" placeholder="Nhập mật khẩu admin" />
+          <button id="btnToggleAdminPassword" type="button" class="secondary password-toggle">Hiện mật khẩu</button>
+        </div>
+        <div id="adminModalError" class="modal-error"></div>
+        <div class="flex" style="justify-content:flex-end; margin-top:8px">
+          <button id="btnCancelAdminLogin" class="secondary">Hủy</button>
+          <button id="btnSubmitAdminLogin">Đăng nhập</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="editTaskModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-large">
+      <div class="modal-head">
+        <h3 style="margin:0;font-size:24px">Chỉnh sửa công việc</h3>
+        <div class="muted small" style="margin-top:6px">Cập nhật nội dung trực tiếp trong hộp thoại này rồi bấm lưu.</div>
+      </div>
+      <div class="modal-body">
+        <input id="editTaskId" type="hidden" />
+        <div class="form-grid">
+          <div class="full-col">
+            <label for="editTaskTitle">Tên công việc</label>
+            <input id="editTaskTitle" type="text" placeholder="Ví dụ: Kiểm tra cơ sở tháng 3" />
+          </div>
+          <div>
+            <label for="editTaskAssignee">Người phụ trách</label>
+            <select id="editTaskAssignee">
+              <option value="">Chọn người phụ trách</option>
+              <option value="Sơn">Sơn</option>
+              <option value="Thanh">Thanh</option>
+              <option value="Nam">Nam</option>
+              <option value="Tùng">Tùng</option>
+              <option value="Uyên">Uyên</option>
+              <option value="M. Quang">M. Quang</option>
+              <option value="X. Quang">X. Quang</option>
+              <option value="Nguyên">Nguyên</option>
+              <option value="Quyền Anh">Quyền Anh</option>
+              <option value="Tuyển">Tuyển</option>
+              <option value="Phương">Phương</option>
+            </select>
+          </div>
+          <div>
+            <label for="editTaskAssignedWeek">Thời gian giao (Tuần/Tháng)</label>
+            <div class="week-input-wrap">
+              <input id="editTaskAssignedWeek" type="week" />
+              <div id="editTaskAssignedWeekInlineDisplay" class="week-input-display empty">Chọn Tuần/Tháng</div>
+            </div>
+            <div id="editTaskAssignedWeekDisplay" class="week-preview">-</div>
+          </div>
+          <div>
+            <label for="editTaskDueDate">Hạn hoàn thành</label>
+            <input id="editTaskDueDate" type="date" />
+          </div>
+          <div>
+            <label for="editTaskStatus">Trạng thái</label>
+            <select id="editTaskStatus">
+              <option value="Đang thực hiện">Đang thực hiện</option>
+              <option value="Hoàn thành">Hoàn thành</option>
+            </select>
+          </div>
+          <div class="full-col split-field">
+            <div class="field-box">
+              <label for="editTaskDescription">Nội dung công việc</label>
+              <textarea id="editTaskDescription" placeholder="Mô tả ngắn gọn yêu cầu, đầu việc, lưu ý thực hiện..."></textarea>
+            </div>
+            <div class="field-box">
+              <label for="editTaskDescriptionImage">Tệp đính kèm</label>
+              <div class="attachment-box">
+                <input id="editTaskDescriptionImage" type="file" accept="image/*,application/pdf,.pdf" multiple />
+                <div class="attachment-actions">
+                  <button id="btnRemoveEditTaskImage" type="button" class="secondary">Xóa tệp</button>
+                  <div id="editTaskImagePreview" class="attachment-file-list"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="full-col split-field">
+            <div class="field-box">
+              <label for="editTaskNote">Ghi chú</label>
+              <textarea id="editTaskNote" placeholder="Nhập ghi chú bổ sung, yêu cầu phối hợp, văn bản liên quan..."></textarea>
+            </div>
+            <div class="field-box">
+              <label for="editTaskNoteFile">Tệp đính kèm cho ghi chú</label>
+              <div class="attachment-box">
+                <input id="editTaskNoteFile" type="file" accept="image/*,application/pdf,.pdf" multiple />
+                <div class="attachment-actions">
+                  <button id="btnRemoveEditTaskNoteFile" type="button" class="secondary">Xóa tệp</button>
+                  <div id="editTaskNotePreview" class="attachment-file-list"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="editTaskModalError" class="modal-error"></div>
+        <div class="flex" style="justify-content:flex-end; margin-top:8px">
+          <button id="btnCancelEditTask" class="secondary">Hủy</button>
+          <button id="btnSaveEditTask" class="success">Lưu chỉnh sửa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="viewerAlertModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-large">
+      <div class="modal-head">
+        <h3 style="margin:0;font-size:24px">Thông báo công việc cần lưu ý</h3>
+        <div class="muted small" id="viewerAlertSub" style="margin-top:6px">Tổng hợp các công việc quá hạn và sắp hết hạn trong 3 ngày.</div>
+      </div>
+      <div class="modal-body">
+        <div class="alert-columns">
+          <div class="alert-column">
+            <div class="alert-summary-card overdue">
+              <h4>Công việc quá hạn</h4>
+              <div class="alert-summary-count" id="viewerAlertOverdueCount">0</div>
+              <div class="alert-caption">Các công việc đã quá hạn nhưng chưa hoàn thành.</div>
+            </div>
+            <h4 class="alert-column-title" style="color:#a12626">Danh sách công việc quá hạn</h4>
+            <div class="alert-list" id="viewerAlertOverdueList"></div>
+          </div>
+
+          <div class="alert-column">
+            <div class="alert-summary-card due-soon">
+              <h4>Hết hạn trong 3 ngày</h4>
+              <div class="alert-summary-count" id="viewerAlertDueSoonCount">0</div>
+              <div class="alert-caption">Các công việc còn hạn từ hôm nay đến 3 ngày tới.</div>
+            </div>
+            <h4 class="alert-column-title" style="color:#c62828">Danh sách công việc sắp hết hạn</h4>
+            <div class="alert-list" id="viewerAlertDueSoonList"></div>
+          </div>
+        </div>
+
+        <div class="flex" style="justify-content:flex-end; margin-top:14px">
+          <button id="btnCloseViewerAlert" class="secondary">Đã xem</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="copyright">Design by Đội 2, Phòng PC07 Quảng Ninh</div>
+
+<script>
+  function leeMinNguyenAlert(message) {
+    const backdrop = document.getElementById("leeAlertBackdrop");
+    const messageEl = document.getElementById("leeAlertMessage");
+    const okBtn = document.getElementById("leeAlertOk");
+    if (!backdrop || !messageEl || !okBtn) {
+      console.log("LeeMinNguyen cho biết:", message);
+      return;
+    }
+    messageEl.textContent = message == null ? "" : String(message);
+    backdrop.classList.add("show");
+    const close = () => {
+      backdrop.classList.remove("show");
+      okBtn.removeEventListener("click", close);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape" || event.key === "Enter") close();
+    };
+    okBtn.addEventListener("click", close);
+    document.addEventListener("keydown", onKeyDown);
+    setTimeout(() => okBtn.focus(), 0);
+  }
+
+(() => {
+  // Dán link Web App Apps Script dạng /exec vào dòng dưới để cả đội cùng xem chung dữ liệu.
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6P-PKA4rqBcDnTa69LYoXC0gDCeB-lDJmX0xtcok28PvQYrhy-YViwXU6wSBpEVlB/exec";
+  const VIEWER_PASSWORD = "doi2pc07";
+  const ADMIN_PASSWORD = "Doi2thang3";
+  const LOCAL_STORAGE_KEY = "pc07_team_tasks_v1";
+  const PROGRAM_STORAGE_KEY = "pc07_work_programs_v1";
+  const DESCRIPTION_IMAGE_PREFIX = "__TASKDESCIMG__";
+  const NOTE_ATTACHMENT_PREFIX = "__TASKNOTEFILE__";
+
+  function makeEmptyAttachment() {
+    return {
+      file: null,
+      previewUrl: "",
+      attachmentData: "",
+      attachmentUrl: "",
+      attachmentPreviewUrl: "",
+      attachmentName: "",
+      attachmentType: "",
+      attachmentFileId: "",
+      attachmentMimeType: ""
+    };
+  }
+
+  const state = {
+    tasks: [],
+    syncMode: "local",
+    lastLoadSource: "local",
+    programs: [],
+    createAttachments: [],
+    createNoteAttachments: [],
+    editAttachments: [],
+    editNoteAttachments: []
+  };
+
+  const $ = (id) => document.getElementById(id);
+
+  function setStatus(type, html) {
+    const box = $("loadStatus");
+    box.className = "status " + type;
+    box.innerHTML = html;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function safeAttachmentDataUrl(value) {
+    const text = String(value || "").trim();
+    return /^(data:image\/|data:application\/pdf)/i.test(text) ? text : "";
+  }
+
+  function safeAttachmentUrl(value) {
+    const text = String(value || "").trim();
+    return /^https?:\/\//i.test(text) ? text : "";
+  }
+
+  function getAttachmentKind(source = "", fileName = "", mimeType = "") {
+    const text = String(source || "").trim();
+    const name = String(fileName || "").trim().toLowerCase();
+    const mime = String(mimeType || "").trim().toLowerCase();
+    if (/^data:image\//i.test(text) || mime.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(name)) return "image";
+    if (/^data:application\/pdf/i.test(text) || mime === "application/pdf" || name.endsWith('.pdf')) return "pdf";
+    return "";
+  }
+
+  function hasAttachment(item) {
+    if (!item) return false;
+    return !!(item.file || item.attachmentData || item.attachmentUrl || item.attachmentPreviewUrl || item.attachmentFileId);
+  }
+
+  function normalizeAttachment(data) {
+    const raw = data || {};
+    const attachmentData = safeAttachmentDataUrl(raw.attachmentData || raw.image || "");
+    const attachmentUrl = safeAttachmentUrl(raw.attachmentUrl || raw.fileUrl || "");
+    const attachmentPreviewUrl = safeAttachmentUrl(raw.attachmentPreviewUrl || raw.previewUrl || attachmentUrl);
+    const attachmentName = String(raw.attachmentName || raw.imageName || raw.fileName || "").trim();
+    const attachmentMimeType = String(raw.attachmentMimeType || raw.mimeType || "").trim();
+    const attachmentFileId = String(raw.attachmentFileId || raw.fileId || "").trim();
+    const attachmentType = String(raw.attachmentType || getAttachmentKind(attachmentData || attachmentPreviewUrl || attachmentUrl, attachmentName, attachmentMimeType) || "").trim();
+    return {
+      file: raw.file || null,
+      previewUrl: String(raw.previewUrl || "").trim(),
+      attachmentData,
+      attachmentUrl,
+      attachmentPreviewUrl,
+      attachmentName,
+      attachmentType,
+      attachmentFileId,
+      attachmentMimeType
+    };
+  }
+
+  function normalizeAttachmentList(source) {
+    if (!source) return [];
+    const rawList = Array.isArray(source)
+      ? source
+      : Array.isArray(source.attachments)
+        ? source.attachments
+        : [source];
+    return rawList
+      .map(normalizeAttachment)
+      .filter(hasAttachment);
+  }
+
+  function hasAttachments(list) {
+    return normalizeAttachmentList(list).length > 0;
+  }
+
+  function hasPendingAttachmentFiles(list) {
+    return normalizeAttachmentList(list).some(item => !!item.file);
+  }
+
+  function getAttachmentFileIds(list) {
+    return normalizeAttachmentList(list)
+      .map(item => String(item.attachmentFileId || "").trim())
+      .filter(Boolean);
+  }
+
+  function cloneAttachmentForStorage(item) {
+    const normalized = normalizeAttachment(item);
+    return {
+      attachmentData: normalized.attachmentData,
+      attachmentUrl: normalized.attachmentUrl,
+      attachmentPreviewUrl: normalized.attachmentPreviewUrl,
+      attachmentName: normalized.attachmentName,
+      attachmentType: normalized.attachmentType,
+      attachmentFileId: normalized.attachmentFileId,
+      attachmentMimeType: normalized.attachmentMimeType
+    };
+  }
+
+  function attachmentPayloadObject(attachments) {
+    const normalized = normalizeAttachmentList(attachments).map(cloneAttachmentForStorage);
+    const first = normalized[0] || {};
+    return {
+      attachments: normalized,
+      attachmentData: first.attachmentData || "",
+      attachmentUrl: first.attachmentUrl || "",
+      attachmentPreviewUrl: first.attachmentPreviewUrl || "",
+      attachmentName: first.attachmentName || "",
+      attachmentType: first.attachmentType || "",
+      attachmentFileId: first.attachmentFileId || "",
+      attachmentMimeType: first.attachmentMimeType || ""
+    };
+  }
+
+  function parseTaskDescription(rawDescription) {
+    const raw = String(rawDescription || "").trim();
+    if (!raw.startsWith(DESCRIPTION_IMAGE_PREFIX)) {
+      return { text: raw, attachments: [] };
+    }
+    try {
+      const jsonText = decodeURIComponent(raw.slice(DESCRIPTION_IMAGE_PREFIX.length));
+      const parsed = JSON.parse(jsonText);
+      return {
+        text: String(parsed.text || "").trim(),
+        attachments: normalizeAttachmentList(parsed)
+      };
+    } catch (err) {
+      return { text: raw, attachments: [] };
+    }
+  }
+
+  function buildTaskDescriptionPayload(text, attachments) {
+    const cleanText = String(text || "").trim();
+    const normalized = normalizeAttachmentList(attachments);
+    if (!normalized.length) return cleanText;
+    return DESCRIPTION_IMAGE_PREFIX + encodeURIComponent(JSON.stringify({
+      text: cleanText,
+      ...attachmentPayloadObject(normalized)
+    }));
+  }
+
+  function getTaskDescriptionText(rawDescription) {
+    return parseTaskDescription(rawDescription).text;
+  }
+
+  function getAttachmentOpenUrl(data) {
+    const normalized = normalizeAttachment(data);
+    return safeAttachmentUrl(normalized.attachmentUrl) || safeAttachmentDataUrl(normalized.attachmentData);
+  }
+
+  function getAttachmentPreviewUrl(data) {
+    const normalized = normalizeAttachment(data);
+    return safeAttachmentDataUrl(normalized.attachmentData) || safeAttachmentUrl(normalized.attachmentPreviewUrl) || safeAttachmentUrl(normalized.attachmentUrl);
+  }
+
+  function buildAttachmentHtmlList(attachments, mode = "description") {
+    return normalizeAttachmentList(attachments).map(item => {
+      const openUrl = getAttachmentOpenUrl(item);
+      const previewUrl = getAttachmentPreviewUrl(item);
+      if (item.attachmentType === "image" && previewUrl) {
+        const imageClass = mode === "note" ? "task-note-image" : "task-desc-image";
+        const wrapperClass = mode === "note" ? "task-note-attachment" : "task-desc-attachment";
+        const altText = mode === "note" ? "Ảnh ghi chú" : "Ảnh đính kèm";
+        const href = openUrl || previewUrl || "#";
+        return `<div class="${wrapperClass}"><a href="${href}" target="_blank" rel="noopener noreferrer"><img class="${imageClass}" src="${previewUrl}" alt="${escapeHtml(item.attachmentName || altText)}"></a></div>`;
+      }
+      const wrapperClass = mode === "note" ? "task-note-attachment" : "task-desc-attachment";
+      const linkClass = mode === "note" ? "task-note-file-link" : "task-desc-file-link";
+      const label = mode === "note" ? "PDF ghi chú" : "PDF đính kèm";
+      return `<div class="${wrapperClass}"><a class="${linkClass}" href="${openUrl || '#'}" target="_blank" rel="noopener noreferrer">${label}: ${escapeHtml(item.attachmentName || (mode === "note" ? "tep-ghi-chu.pdf" : "tep-dinh-kem.pdf"))}</a></div>`;
+    }).join("");
+  }
+
+  function buildTaskDescriptionHtml(rawDescription) {
+    const data = parseTaskDescription(rawDescription);
+    const textHtml = `<div class="task-desc">${escapeHtml(data.text || "Không có mô tả")}</div>`;
+    return textHtml + buildAttachmentHtmlList(data.attachments, "description");
+  }
+
+  function parseTaskNote(rawNote) {
+    const raw = String(rawNote || "").trim();
+    if (!raw.startsWith(NOTE_ATTACHMENT_PREFIX)) {
+      return { text: raw, attachments: [] };
+    }
+    try {
+      const jsonText = decodeURIComponent(raw.slice(NOTE_ATTACHMENT_PREFIX.length));
+      const parsed = JSON.parse(jsonText);
+      return {
+        text: String(parsed.text || "").trim(),
+        attachments: normalizeAttachmentList(parsed)
+      };
+    } catch (err) {
+      return { text: raw, attachments: [] };
+    }
+  }
+
+  function buildTaskNotePayload(text, attachments) {
+    const cleanText = String(text || "").trim();
+    const normalized = normalizeAttachmentList(attachments);
+    if (!normalized.length) return cleanText;
+    return NOTE_ATTACHMENT_PREFIX + encodeURIComponent(JSON.stringify({
+      text: cleanText,
+      ...attachmentPayloadObject(normalized)
+    }));
+  }
+
+  function getTaskNoteText(rawNote) {
+    return parseTaskNote(rawNote).text;
+  }
+
+  function buildTaskNoteHtml(rawNote) {
+    const data = parseTaskNote(rawNote);
+    const parts = [];
+    if (data.text) {
+      parts.push(`<div class="task-note-text">${escapeHtml(data.text)}</div>`);
+    }
+    const attachmentHtml = buildAttachmentHtmlList(data.attachments, "note");
+    if (attachmentHtml) parts.push(attachmentHtml);
+    return parts.join("") || `<span class="muted">-</span>`;
+  }
+
+  function buildNoteCellHtml(task) {
+    if (isDueSoon(task)) return escapeHtml("Sắp hết hạn");
+    if (task.status === "Hoàn thành") {
+      const noteData = parseTaskNote(task.note);
+      if (noteData.text || hasAttachments(noteData.attachments)) {
+        return buildTaskNoteHtml(task.note);
+      }
+    }
+    return `<span class="muted">-</span>`;
+  }
+
+  function revokePreviewUrl(url) {
+    if (String(url || "").startsWith("blob:")) {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  function revokeAttachmentPreviewUrls(list) {
+    normalizeAttachmentList(list).forEach(item => revokePreviewUrl(item.previewUrl));
+  }
+
+  function renderImagePreview(containerId, attachments) {
+    const box = $(containerId);
+    if (!box) return;
+    const items = normalizeAttachmentList(attachments);
+    if (!items.length) {
+      box.innerHTML = "";
+      return;
+    }
+    box.innerHTML = items.map(item => {
+      const fileName = item.attachmentName || (item.attachmentType === "pdf" ? "tep-dinh-kem.pdf" : "anh-dinh-kem.jpg");
+      return `<span class="attachment-file-item" title="${escapeHtml(fileName)}">${escapeHtml(fileName)}</span>`;
+    }).join("");
+  }
+
+  function clearCreateImageSelection() {
+    revokeAttachmentPreviewUrls(state.createAttachments);
+    state.createAttachments = [];
+    if ($("taskDescriptionImage")) $("taskDescriptionImage").value = "";
+    renderImagePreview("taskImagePreview", state.createAttachments);
+  }
+
+  function clearCreateNoteAttachmentSelection() {
+    revokeAttachmentPreviewUrls(state.createNoteAttachments);
+    state.createNoteAttachments = [];
+    if ($("taskNoteFile")) $("taskNoteFile").value = "";
+    renderImagePreview("taskNotePreview", state.createNoteAttachments);
+  }
+
+  function clearEditImageSelection() {
+    revokeAttachmentPreviewUrls(state.editAttachments);
+    state.editAttachments = [];
+    if ($("editTaskDescriptionImage")) $("editTaskDescriptionImage").value = "";
+    renderImagePreview("editTaskImagePreview", state.editAttachments);
+  }
+
+  function clearEditNoteAttachmentSelection() {
+    revokeAttachmentPreviewUrls(state.editNoteAttachments);
+    state.editNoteAttachments = [];
+    if ($("editTaskNoteFile")) $("editTaskNoteFile").value = "";
+    renderImagePreview("editTaskNotePreview", state.editNoteAttachments);
+  }
+
+  function validateAttachmentFile(file) {
+    if (!file) return { ok: true };
+    const isImage = /^image\//i.test(file.type || "");
+    const isPdf = /^application\/pdf$/i.test(file.type || "") || /\.pdf$/i.test(file.name || "");
+    if (!isImage && !isPdf) {
+      return { ok: false, message: "Chỉ hỗ trợ tải lên ảnh hoặc file PDF." };
+    }
+    if ((file.size || 0) > 10 * 1024 * 1024) {
+      return { ok: false, message: "Tệp đính kèm quá lớn. Hãy dùng tệp nhỏ hơn 10MB." };
+    }
+    return { ok: true, attachmentType: isPdf ? "pdf" : "image" };
+  }
+
+  function fileToUploadPayload(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) {
+        resolve(null);
+        return;
+      }
+
+      const check = validateAttachmentFile(file);
+      if (!check.ok) {
+        reject(new Error(check.message));
+        return;
+      }
+
+      const isPdf = check.attachmentType === "pdf";
+      if (isPdf) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = String(reader.result || "");
+          const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : "";
+          if (!base64Data) {
+            reject(new Error("Không đọc được file PDF tải lên."));
+            return;
+          }
+          resolve({
+            fileName: file.name || "tep-dinh-kem.pdf",
+            mimeType: "application/pdf",
+            attachmentType: "pdf",
+            base64Data
+          });
+        };
+        reader.onerror = () => reject(new Error("Không đọc được file PDF tải lên."));
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxWidth = 1600;
+          const maxHeight = 1600;
+          let { width, height } = img;
+          const scale = Math.min(1, maxWidth / width, maxHeight / height);
+          width = Math.max(1, Math.round(width * scale));
+          height = Math.max(1, Math.round(height * scale));
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          let quality = 0.9;
+          let dataUrl = canvas.toDataURL("image/jpeg", quality);
+          while (dataUrl.length > 4_500_000 && quality > 0.5) {
+            quality -= 0.08;
+            dataUrl = canvas.toDataURL("image/jpeg", quality);
+          }
+          const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : "";
+          if (!base64Data) {
+            reject(new Error("Không đọc được ảnh tải lên."));
+            return;
+          }
+          resolve({
+            fileName: (file.name || "anh-dinh-kem.jpg").replace(/\.[^.]+$/, '') + ".jpg",
+            mimeType: "image/jpeg",
+            attachmentType: "image",
+            base64Data
+          });
+        };
+        img.onerror = () => reject(new Error("Không đọc được ảnh tải lên."));
+        img.src = reader.result;
+      };
+      reader.onerror = () => reject(new Error("Không đọc được tệp ảnh."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function appendAttachmentsFromFiles(existingAttachments, files, defaultBaseName = "tep-dinh-kem") {
+    const next = normalizeAttachmentList(existingAttachments);
+    Array.from(files || []).forEach(file => {
+      if (!file) return;
+      const check = validateAttachmentFile(file);
+      if (!check.ok) throw new Error(check.message);
+      next.push(normalizeAttachment({
+        file,
+        previewUrl: URL.createObjectURL(file),
+        attachmentName: file.name || defaultBaseName,
+        attachmentType: check.attachmentType,
+        attachmentMimeType: file.type || (check.attachmentType === "pdf" ? "application/pdf" : "image/jpeg")
+      }));
+    });
+    return next;
+  }
+
+  function setCreateAttachmentsFromFiles(files) {
+    state.createAttachments = appendAttachmentsFromFiles(state.createAttachments, files, "tep-dinh-kem");
+    renderImagePreview("taskImagePreview", state.createAttachments);
+  }
+
+  function setCreateNoteAttachmentsFromFiles(files) {
+    state.createNoteAttachments = appendAttachmentsFromFiles(state.createNoteAttachments, files, "tep-ghi-chu");
+    renderImagePreview("taskNotePreview", state.createNoteAttachments);
+  }
+
+  function setEditAttachmentsFromFiles(files) {
+    state.editAttachments = appendAttachmentsFromFiles(state.editAttachments, files, "tep-dinh-kem");
+    renderImagePreview("editTaskImagePreview", state.editAttachments);
+  }
+
+  function setEditNoteAttachmentsFromFiles(files) {
+    state.editNoteAttachments = appendAttachmentsFromFiles(state.editNoteAttachments, files, "tep-ghi-chu");
+    renderImagePreview("editTaskNotePreview", state.editNoteAttachments);
+  }
+
+  async function handleCreateImageUpload() {
+    const input = $("taskDescriptionImage");
+    const files = input && input.files ? Array.from(input.files) : [];
+    if (!files.length) return;
+    try {
+      setCreateAttachmentsFromFiles(files);
+    } catch (err) {
+      leeMinNguyenAlert(err.message || "Không tải được tệp đính kèm.");
+    } finally {
+      if (input) input.value = "";
+    }
+  }
+
+  async function handleCreateNoteFileUpload() {
+    const input = $("taskNoteFile");
+    const files = input && input.files ? Array.from(input.files) : [];
+    if (!files.length) return;
+    try {
+      setCreateNoteAttachmentsFromFiles(files);
+    } catch (err) {
+      leeMinNguyenAlert(err.message || "Không tải được tệp ghi chú.");
+    } finally {
+      if (input) input.value = "";
+    }
+  }
+
+  async function handleEditImageUpload() {
+    const input = $("editTaskDescriptionImage");
+    const files = input && input.files ? Array.from(input.files) : [];
+    if (!files.length) return;
+    try {
+      setEditAttachmentsFromFiles(files);
+    } catch (err) {
+      leeMinNguyenAlert(err.message || "Không tải được tệp đính kèm.");
+    } finally {
+      if (input) input.value = "";
+    }
+  }
+
+  async function handleEditNoteFileUpload() {
+    const input = $("editTaskNoteFile");
+    const files = input && input.files ? Array.from(input.files) : [];
+    if (!files.length) return;
+    try {
+      setEditNoteAttachmentsFromFiles(files);
+    } catch (err) {
+      leeMinNguyenAlert(err.message || "Không tải được tệp ghi chú.");
+    } finally {
+      if (input) input.value = "";
+    }
+  }
+
+  function setMain(title, sub) {
+    $("mainTitle").textContent = title;
+    $("mainSub").textContent = sub;
+    const header = $("mainHeader");
+    if (header) header.classList.toggle("hidden", !title && !sub);
+  }
+
+  function showOnly(sectionId) {
+    ["welcomePanel", "viewerPanel", "adminPanel", "workProgramPanel"].forEach(id => $(id).classList.add("hidden"));
+    $(sectionId).classList.remove("hidden");
+  }
+
+  function enterWorkMode() {
+    $("accessCard").classList.add("hidden");
+    $("mainGrid").classList.add("expanded");
+  }
+
+  function backToRoleSelection() {
+    document.body.classList.remove("work-program-full");
+    $("accessCard").classList.remove("hidden");
+    $("mainGrid").classList.remove("expanded");
+    $("adminPassword").value = "";
+    $("viewerPassword").value = "";
+    if ($("viewerLoginModal")) closeViewerLoginModal();
+    if ($("adminLoginModal")) closeAdminLoginModal();
+    if ($("editTaskModal")) closeEditTaskModal();
+    if ($("viewerAlertModal")) closeViewerAlertModal();
+  }
+
+  const HOME_MAIN_TITLE = "";
+  let isApplyingAppHistory = false;
+
+  function rememberAppView(view, replace = false) {
+    if (isApplyingAppHistory || !window.history || !window.history.pushState) return;
+    const method = replace ? "replaceState" : "pushState";
+    window.history[method]({ appView: view }, "", window.location.href);
+  }
+
+  function renderAppView(view, options = {}) {
+    const appView = ["home", "viewer", "admin", "program"].includes(view) ? view : "home";
+
+    if (appView === "home") {
+      backToRoleSelection();
+      setMain(HOME_MAIN_TITLE, "");
+      showOnly("welcomePanel");
+      return;
+    }
+
+    if (appView === "viewer") {
+      document.body.classList.remove("work-program-full");
+      enterWorkMode();
+      setMain("Danh sách công việc của đội", "Mọi thành viên có thể theo dõi toàn bộ đầu việc, người phụ trách và thời hạn xử lý.");
+      showOnly("viewerPanel");
+      renderViewerSection();
+      return;
+    }
+
+    if (appView === "admin") {
+      if (!options.allowAdmin && $("adminPassword").value !== ADMIN_PASSWORD) {
+        renderAppView("home");
+        rememberAppView("home", true);
+        return;
+      }
+      document.body.classList.remove("work-program-full");
+      enterWorkMode();
+      setMain("Quản trị công việc", "");
+      showOnly("adminPanel");
+      renderAdminSection();
+      return;
+    }
+
+    enterWorkMode();
+    document.body.classList.add("work-program-full");
+    setMain("Chương trình công tác", "");
+    showOnly("workProgramPanel");
+    renderWorkProgramSection();
+  }
+
+  function navigateToAppView(view, options = {}) {
+    renderAppView(view, options);
+    rememberAppView(view, Boolean(options.replaceHistory));
+  }
+
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState({ appView: "home" }, "", window.location.href);
+    window.addEventListener("popstate", (event) => {
+      isApplyingAppHistory = true;
+      renderAppView(event.state && event.state.appView ? event.state.appView : "home", { fromHistory: true });
+      isApplyingAppHistory = false;
+    });
+  }
+
+  function makeId() {
+    return "TASK-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+  }
+
+  function normalizeTask(raw) {
+    const dueDate = normalizeDate(raw.dueDate || raw.deadline || "");
+    return {
+      id: String(raw.id || raw.taskId || makeId()).trim(),
+      title: String(raw.title || raw.name || "").trim(),
+      description: String(raw.description || raw.content || "").trim(),
+      assignee: String(raw.assignee || raw.owner || "").trim(),
+      assignedWeek: normalizeWeek(raw.assignedWeek || raw.assignWeek || raw.assignmentWeek || raw.thoiGianGiao || "", dueDate),
+      dueDate,
+      status: normalizeTaskStatus(raw.status),
+      note: String(raw.note || raw.notes || "").trim(),
+      createdAt: normalizeIso(raw.createdAt || raw.created_at || new Date().toISOString()),
+      updatedAt: normalizeIso(raw.updatedAt || raw.updated_at || new Date().toISOString())
+    };
+  }
+
+
+  function normalizeTaskStatus(value) {
+    const v = String(value || "").trim();
+    if (["Hoàn thành", "Hoan thanh"].includes(v)) return "Hoàn thành";
+    return "Đang thực hiện";
+  }
+
+  function normalizeDate(value) {
+    if (!value) return "";
+    const text = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+    const d = new Date(text);
+    if (isNaN(d)) return "";
+    return d.toISOString().slice(0, 10);
+  }
+
+  function getAssignedWeekYearHint(value) {
+    const text = String(value || "").trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return Number(text.slice(0, 4));
+    if (/^\d{4}-W\d{2}$/.test(text)) return Number(text.slice(0, 4));
+    if (/^\d{4}$/.test(text)) return Number(text);
+    return new Date().getFullYear();
+  }
+
+  function dateToIsoWeekString(date) {
+    const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const dayNr = utcDate.getUTCDay() || 7;
+    utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNr);
+    const isoYear = utcDate.getUTCFullYear();
+    const yearStart = new Date(Date.UTC(isoYear, 0, 1));
+    const weekNo = Math.ceil((((utcDate - yearStart) / 86400000) + 1) / 7);
+    return `${isoYear}-W${String(weekNo).padStart(2, "0")}`;
+  }
+
+  function getTodayAssignedWeek() {
+    const now = new Date();
+    const todayUtc = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    return dateToIsoWeekString(todayUtc);
+  }
+
+  function monthWeekToIsoWeek(year, month, weekOfMonth) {
+    const safeYear = Number(year) || new Date().getFullYear();
+    const safeMonth = Math.min(12, Math.max(1, Number(month) || 1));
+    const safeWeek = Math.min(5, Math.max(1, Number(weekOfMonth) || 1));
+    const lastDay = new Date(Date.UTC(safeYear, safeMonth, 0)).getUTCDate();
+    const startDay = Math.min(lastDay, ((safeWeek - 1) * 7) + 1);
+    const date = new Date(Date.UTC(safeYear, safeMonth - 1, startDay));
+    return dateToIsoWeekString(date);
+  }
+
+  function normalizeWeek(value, fallbackYearOrDate = "") {
+    if (!value) return "";
+    const text = String(value).trim();
+    if (/^\d{4}-W\d{2}$/.test(text)) return text;
+
+    let match = text.match(/^(\d{4})[-\/](\d{1,2})$/);
+    if (match) {
+      return `${match[1]}-W${String(match[2]).padStart(2, "0")}`;
+    }
+
+    const fallbackYear = getAssignedWeekYearHint(fallbackYearOrDate);
+
+    match = text.match(/^Y(\d{4})-M(\d{2})-W([1-5])$/i);
+    if (match) {
+      return monthWeekToIsoWeek(Number(match[1]), Number(match[2]), Number(match[3]));
+    }
+
+    match = text.match(/^M(\d{2})-W([1-5])$/i);
+    if (match) {
+      return monthWeekToIsoWeek(fallbackYear, Number(match[1]), Number(match[2]));
+    }
+
+    match = text.match(/^Tuần\s*([1-5])\s*\/\s*Tháng\s*(\d{1,2})$/i);
+    if (match) {
+      return monthWeekToIsoWeek(fallbackYear, Number(match[2]), Number(match[1]));
+    }
+
+    return "";
+  }
+
+  function normalizeIso(value) {
+    const d = new Date(value || new Date());
+    return isNaN(d) ? new Date().toISOString() : d.toISOString();
+  }
+
+  function readLocalTasks() {
+    try {
+      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map(normalizeTask).filter(task => task.title) : [];
+    } catch (err) {
+      console.warn("Không đọc được dữ liệu cục bộ:", err);
+      return [];
+    }
+  }
+
+  function saveLocalTasks(tasks) {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
+    } catch (err) {
+      console.warn("Không lưu được dữ liệu cục bộ:", err);
+    }
+  }
+
+  function sortTasks(tasks) {
+    const statusOrder = { "Đang thực hiện": 0, "Hoàn thành": 1 };
+    return [...tasks].sort((a, b) => {
+      const statusDiff = (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9);
+      if (statusDiff !== 0) return statusDiff;
+
+      const aOverdue = isOverdue(a) ? 0 : 1;
+      const bOverdue = isOverdue(b) ? 0 : 1;
+      if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+
+      const aDueSoon = isDueSoon(a) ? 0 : 1;
+      const bDueSoon = isDueSoon(b) ? 0 : 1;
+      if (aDueSoon !== bDueSoon) return aDueSoon - bDueSoon;
+
+      if (a.dueDate && b.dueDate) {
+        const dueDiff = a.dueDate.localeCompare(b.dueDate);
+        if (dueDiff !== 0) return dueDiff;
+      } else if (a.dueDate || b.dueDate) {
+        return a.dueDate ? -1 : 1;
+      }
+
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+  }
+
+  function isOverdue(task) {
+    if (!task.dueDate || task.status === "Hoàn thành") return false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const due = new Date(task.dueDate + "T00:00:00");
+    return due < today;
+  }
+
+  function isDueSoon(task) {
+    if (!task.dueDate || task.status === "Hoàn thành") return false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const due = new Date(task.dueDate + "T00:00:00");
+    if (due < today) return false;
+    const diffDays = Math.ceil((due - today) / 86400000);
+    return diffDays <= 3;
+  }
+
+  function getDisplayNote(task) {
+    if (isDueSoon(task)) return "Sắp hết hạn";
+    if (task.status === "Hoàn thành") return getTaskNoteText(task.note);
+    return "";
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return "-";
+    const d = new Date(dateString + "T00:00:00");
+    if (isNaN(d)) return dateString;
+    return d.toLocaleDateString("vi-VN");
+  }
+
+  function getWeekMonthDisplayData(weekString) {
+    const range = getIsoWeekDateRange(weekString);
+    if (!range) return null;
+    const monday = range.start;
+    const month = monday.getUTCMonth() + 1;
+    const weekOfMonth = Math.floor((monday.getUTCDate() - 1) / 7) + 1;
+    return { weekOfMonth, month, year: monday.getUTCFullYear() };
+  }
+
+  function formatWeek(weekString) {
+    if (!weekString) return "-";
+    const data = getWeekMonthDisplayData(weekString);
+    if (!data) return weekString;
+    return `Tuần ${data.weekOfMonth}/Tháng ${data.month}`;
+  }
+
+  function formatWeekStackedHtml(weekString) {
+    if (!weekString) return '<span class="muted">-</span>';
+    const data = getWeekMonthDisplayData(weekString);
+    if (!data) return escapeHtml(weekString);
+    return `<div class="week-stacked"><span>Tuần ${data.weekOfMonth}</span><span class="month-line">/Tháng ${data.month}</span></div>`;
+  }
+
+  function updateWeekDisplay(inputId, outputId, inlineId) {
+    const input = $(inputId);
+    const output = $(outputId);
+    const inline = inlineId ? $(inlineId) : null;
+    if (!input || !output) return;
+    const formatted = input.value ? formatWeek(input.value) : "-";
+    output.textContent = formatted;
+    if (inline) {
+      const hasValue = !!input.value;
+      inline.textContent = hasValue ? formatWeek(input.value) : "Chọn Tuần/Tháng";
+      inline.classList.toggle("empty", !hasValue);
+    }
+  }
+
+  function ensureSelectOption(selectId, value) {
+    const select = $(selectId);
+    const normalized = String(value || "").trim();
+    if (!select || !normalized) return;
+    const exists = [...select.options].some(option => option.value === normalized);
+    if (!exists) {
+      const option = document.createElement("option");
+      option.value = normalized;
+      option.textContent = normalized;
+      select.appendChild(option);
+    }
+  }
+
+  function getIsoWeekDateRange(weekString) {
+    const match = String(weekString || "").match(/^(\d{4})-W(\d{2})$/);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const week = Number(match[2]);
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const jan4Day = jan4.getUTCDay() || 7;
+    const monday = new Date(jan4);
+    monday.setUTCDate(jan4.getUTCDate() - jan4Day + 1 + (week - 1) * 7);
+    const sunday = new Date(monday);
+    sunday.setUTCDate(monday.getUTCDate() + 6);
+    return { start: monday, end: sunday };
+  }
+
+  function formatWeekRangeText(weekString) {
+    const range = getIsoWeekDateRange(weekString);
+    if (!range) return "";
+    return formatRangeText(range.start, range.end);
+  }
+
+  function formatRangeText(startDate, endDate) {
+    if (!startDate || !endDate) return "";
+    const startText = new Date(startDate).toLocaleDateString("vi-VN", { timeZone: "UTC" });
+    const endText = new Date(endDate).toLocaleDateString("vi-VN", { timeZone: "UTC" });
+    return `Từ ngày ${startText} đến ngày ${endText}`;
+  }
+
+  function getDisplayedTasksForPrint() {
+    if (!$("viewerPanel").classList.contains("hidden")) {
+      return sortTasks(getFilteredTasks());
+    }
+    if (!$("adminPanel").classList.contains("hidden")) {
+      return sortTasks(getFilteredAdminTasks());
+    }
+    return sortTasks(state.tasks);
+  }
+
+  function getDisplayedRangeText(tasks) {
+    if (!Array.isArray(tasks) || !tasks.length) return "";
+
+    const weekRanges = tasks.map(task => getIsoWeekDateRange(task.assignedWeek)).filter(Boolean);
+    if (weekRanges.length) {
+      let minStart = weekRanges[0].start;
+      let maxEnd = weekRanges[0].end;
+      weekRanges.forEach(range => {
+        if (range.start < minStart) minStart = range.start;
+        if (range.end > maxEnd) maxEnd = range.end;
+      });
+      return formatRangeText(minStart, maxEnd);
+    }
+
+    const dueDates = tasks.map(task => task.dueDate).filter(Boolean).sort();
+    if (dueDates.length) {
+      const start = new Date(dueDates[0] + "T00:00:00");
+      const end = new Date(dueDates[dueDates.length - 1] + "T00:00:00");
+      return formatRangeText(start, end);
+    }
+
+    return "";
+  }
+
+  function formatDateTime(isoString) {
+    if (!isoString) return "-";
+    const d = new Date(isoString);
+    if (isNaN(d)) return isoString;
+    return d.toLocaleString("vi-VN");
+  }
+
+
+  function statusClass(status) {
+    if (status === "Hoàn thành") return "state-done";
+    return "state-doing";
+  }
+
+  function updateSyncUI() {
+    const isCloud = state.syncMode === "cloud";
+    if ($("dataModeView")) $("dataModeView").textContent = isCloud ? "Dùng chung" : "Cục bộ";
+    if ($("dataModeAdmin")) $("dataModeAdmin").textContent = isCloud ? "Dùng chung" : "Cục bộ";
+  }
+
+  async function loadTasks(showToast = false) {
+    setStatus("info", "Đang tải danh sách công việc...");
+
+    const localTasks = sortTasks(readLocalTasks());
+    const hasLocalCache = localTasks.length > 0;
+
+    if (hasLocalCache) {
+      state.tasks = localTasks;
+      state.syncMode = state.syncMode === "cloud" ? "cloud" : "local";
+      state.lastLoadSource = "local-cache";
+      updateSyncUI();
+      renderAll();
+      setStatus("info", "Đang mở nhanh dữ liệu đã lưu trên máy và đồng bộ nền...");
+    }
+
+    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
+      state.tasks = localTasks;
+      state.syncMode = "local";
+      state.lastLoadSource = "local";
+      saveLocalTasks(state.tasks);
+      afterTaskLoad(showToast ? "warning" : "info", state.tasks.length
+        ? "Chưa cấu hình Apps Script. Hệ thống đang dùng dữ liệu cục bộ trên máy này."
+        : "Chưa có công việc nào. Hệ thống đang dùng dữ liệu cục bộ trên máy này.");
+      return;
+    }
+
+    try {
+      const url = SCRIPT_URL + (SCRIPT_URL.includes("?") ? "&" : "?") + "action=listTasks&_ts=" + Date.now();
+      const resp = await fetch(url, { cache: "no-store" });
+      const data = await resp.json();
+      const rows = Array.isArray(data.rows) ? data.rows : [];
+      state.tasks = sortTasks(rows.map(normalizeTask).filter(task => task.title));
+      state.syncMode = "cloud";
+      state.lastLoadSource = "cloud";
+      saveLocalTasks(state.tasks);
+      afterTaskLoad("success", "Đã đồng bộ <b>" + state.tasks.length + "</b> công việc từ hệ thống.");
+    } catch (err) {
+      console.error(err);
+      state.tasks = localTasks;
+      state.syncMode = "local";
+      state.lastLoadSource = "local";
+      saveLocalTasks(state.tasks);
+      afterTaskLoad("warning", state.tasks.length
+        ? "Không kết nối được Apps Script, đang dùng dữ liệu cục bộ gần nhất trên máy này."
+        : "Không kết nối được Apps Script và chưa có dữ liệu cục bộ. Hãy đăng nhập admin để tạo công việc đầu tiên.");
+    }
+  }
+
+  function afterTaskLoad(statusType, message) {
+    updateSyncUI();
+    setStatus(statusType, message);
+    renderAll();
+  }
+
+  function populateSelectOptions(selectId, values, formatter = value => value) {
+    const select = $(selectId);
+    if (!select) return;
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">Tất cả</option>' + values.map(value => '<option value="' + escapeHtml(value) + '">' + escapeHtml(formatter(value)) + '</option>').join("");
+    if (["", ...values].includes(currentValue)) {
+      select.value = currentValue;
+    }
+  }
+
+  function populateFilters() {
+    const assignees = [...new Set(state.tasks.map(task => task.assignee).filter(Boolean))].sort((a, b) => a.localeCompare(b, "vi"));
+    const weeks = [...new Set(state.tasks.map(task => task.assignedWeek).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+
+    populateSelectOptions("filterAssignee", assignees);
+    populateSelectOptions("filterWeek", weeks, formatWeek);
+    populateSelectOptions("adminFilterAssignee", assignees);
+    populateSelectOptions("adminFilterWeek", weeks, formatWeek);
+  }
+
+  function getFilteredTasks() {
+    const keyword = $("filterKeyword").value.trim().toLowerCase();
+    const assignee = $("filterAssignee").value.trim();
+    const week = $("filterWeek").value.trim();
+    const status = $("filterStatus").value.trim();
+    const soonDue = $("filterSoonDue").value.trim();
+
+    return state.tasks.filter(task => {
+      const dueSoon = isDueSoon(task);
+      const haystack = [task.title, getTaskDescriptionText(task.description), task.assignee, getTaskNoteText(task.note), formatWeek(task.assignedWeek), dueSoon ? "sắp hết hạn" : ""].join(" ").toLowerCase();
+      if (keyword && !haystack.includes(keyword)) return false;
+      if (assignee && task.assignee !== assignee) return false;
+      if (week && task.assignedWeek !== week) return false;
+      if (status && task.status !== status) return false;
+      if (soonDue === "yes" && !dueSoon) return false;
+      return true;
+    });
+  }
+
+  function getFilteredAdminTasks() {
+    const keyword = ($("adminFilterKeyword")?.value || "").trim().toLowerCase();
+    const assignee = ($("adminFilterAssignee")?.value || "").trim();
+    const week = ($("adminFilterWeek")?.value || "").trim();
+
+    return state.tasks.filter(task => {
+      const haystack = [task.title, getTaskDescriptionText(task.description), task.assignee, formatWeek(task.assignedWeek)].join(" ").toLowerCase();
+      if (keyword && !haystack.includes(keyword)) return false;
+      if (assignee && task.assignee !== assignee) return false;
+      if (week && task.assignedWeek !== week) return false;
+      return true;
+    });
+  }
+
+  function renderSummary(targetPrefix = "", tasks = state.tasks) {
+    const sourceTasks = Array.isArray(tasks) ? tasks : state.tasks;
+    const total = sourceTasks.length;
+    const doing = sourceTasks.filter(task => task.status === "Đang thực hiện").length;
+    const done = sourceTasks.filter(task => task.status === "Hoàn thành").length;
+    const overdue = sourceTasks.filter(task => isOverdue(task)).length;
+
+    const idMap = targetPrefix === "admin"
+      ? {
+          total: "adminStatTotal",
+          doing: "adminStatDoing",
+          overdue: "adminStatOverdue",
+          done: "adminStatDone"
+        }
+      : {
+          total: "statTotal",
+          doing: "statDoing",
+          overdue: "statOverdue",
+          done: "statDone"
+        };
+
+    $(idMap.total).textContent = String(total);
+    $(idMap.doing).textContent = String(doing);
+    $(idMap.overdue).textContent = String(overdue);
+    $(idMap.done).textContent = String(done);
+  }
+
+  function renderViewerSection() {
+    renderSummary("", getFilteredTasks());
+    renderViewerTasks();
+  }
+
+  function renderAdminSection() {
+    renderSummary("admin", getFilteredAdminTasks());
+    renderAdminTasks();
+  }
+
+  function renderViewerTasks() {
+    const tasks = getFilteredTasks();
+    const body = $("viewerTaskBody");
+    body.innerHTML = "";
+
+    if (!tasks.length) {
+      body.innerHTML = '<tr><td colspan="7"><div class="empty-state">Không có công việc phù hợp với điều kiện lọc hiện tại.</div></td></tr>';
+      return;
+    }
+
+    tasks.forEach((task, idx) => {
+      const overdueText = isOverdue(task) ? ' <span class="state-tag state-overdue">Quá hạn</span>' : "";
+      const dueSoonClass = isDueSoon(task) ? 'due-soon-date' : '';
+      const noteHtml = buildNoteCellHtml(task);
+      const tr = document.createElement("tr");
+      if (isDueSoon(task)) tr.classList.add("task-row-soon");
+      tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td>
+          <div class="task-title">${escapeHtml(task.title)}</div>
+          ${buildTaskDescriptionHtml(task.description)}
+        </td>
+        <td>${escapeHtml(task.assignee || "-")}</td>
+        <td>${formatWeekStackedHtml(task.assignedWeek)}</td>
+        <td><span class="${dueSoonClass}">${escapeHtml(formatDate(task.dueDate))}</span>${overdueText}</td>
+        <td><span class="state-tag ${statusClass(task.status)}">${escapeHtml(task.status)}</span></td>
+        <td class="task-note-cell">${noteHtml}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  function renderAdminTasks() {
+    const tasks = getFilteredAdminTasks();
+    const body = $("adminTaskBody");
+    body.innerHTML = "";
+
+    if (!state.tasks.length) {
+      body.innerHTML = '<tr><td colspan="8"><div class="empty-state">Chưa có công việc nào. Hãy tạo công việc đầu tiên.</div></td></tr>';
+      return;
+    }
+
+    if (!tasks.length) {
+      body.innerHTML = '<tr><td colspan="8"><div class="empty-state">Không có công việc phù hợp với điều kiện lọc hiện tại.</div></td></tr>';
+      return;
+    }
+
+    tasks.forEach((task, idx) => {
+      const noteHtml = buildNoteCellHtml(task);
+      const dueSoonClass = isDueSoon(task) ? 'due-soon-date' : '';
+      const tr = document.createElement("tr");
+      if (isDueSoon(task)) tr.classList.add("task-row-soon");
+      tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td>
+          <div class="task-title">${escapeHtml(task.title)}</div>
+          ${buildTaskDescriptionHtml(task.description)}
+        </td>
+        <td>${escapeHtml(task.assignee || "-")}</td>
+        <td>${formatWeekStackedHtml(task.assignedWeek)}</td>
+        <td><span class="${dueSoonClass}">${escapeHtml(formatDate(task.dueDate))}</span></td>
+        <td><span class="state-tag ${statusClass(task.status)}">${escapeHtml(task.status)}</span></td>
+        <td class="task-note-cell">${noteHtml}</td>
+        <td>
+          <div class="flex">
+            <button class="secondary" data-action="edit" data-id="${escapeHtml(task.id)}">Sửa</button>
+            <button class="danger" data-action="delete" data-id="${escapeHtml(task.id)}">Xóa</button>
+          </div>
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+
+  function makeProgramId() {
+    return "PROGRAM-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+  }
+
+  function normalizeProgram(raw) {
+    const item = raw || {};
+    return {
+      id: String(item.id || item.programId || makeProgramId()).trim(),
+      date: normalizeDate(item.date || item.programDate || ""),
+      time: String(item.time || item.programTime || "").trim(),
+      content: String(item.content || item.title || item.programContent || "").trim(),
+      location: String(item.location || item.place || "").trim(),
+      lead: String(item.lead || item.host || item.assignee || "").trim(),
+      participants: String(item.participants || item.members || "").trim(),
+      status: normalizeProgramStatus(item.status),
+      note: String(item.note || item.notes || "").trim(),
+      createdAt: normalizeIso(item.createdAt || new Date().toISOString()),
+      updatedAt: normalizeIso(item.updatedAt || new Date().toISOString())
+    };
+  }
+
+  function normalizeProgramStatus(value) {
+    const v = String(value || "").trim();
+    if (v === "Đã thực hiện" || v === "Da thuc hien") return "Đã thực hiện";
+    if (v === "Hoãn" || v === "Hoan") return "Hoãn";
+    return "Sắp diễn ra";
+  }
+
+  function readLocalPrograms() {
+    try {
+      const raw = localStorage.getItem(PROGRAM_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map(normalizeProgram).filter(item => item.content) : [];
+    } catch (err) {
+      console.warn("Không đọc được chương trình công tác:", err);
+      return [];
+    }
+  }
+
+  function saveLocalPrograms(programs) {
+    try {
+      localStorage.setItem(PROGRAM_STORAGE_KEY, JSON.stringify(programs));
+    } catch (err) {
+      console.warn("Không lưu được chương trình công tác:", err);
+    }
+  }
+
+  function sortPrograms(programs) {
+    return [...programs].sort((a, b) => {
+      const dateDiff = String(a.date || "9999-12-31").localeCompare(String(b.date || "9999-12-31"));
+      if (dateDiff !== 0) return dateDiff;
+      const timeDiff = String(a.time || "").localeCompare(String(b.time || ""), "vi");
+      if (timeDiff !== 0) return timeDiff;
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+  }
+
+  function loadPrograms() {
+    state.programs = sortPrograms(readLocalPrograms());
+  }
+
+  function programStatusClass(status) {
+    if (status === "Đã thực hiện") return "state-done";
+    if (status === "Hoãn") return "state-overdue";
+    return "state-doing";
+  }
+
+  function getFilteredPrograms() {
+    const keyword = ($("programFilterKeyword")?.value || "").trim().toLowerCase();
+    const status = ($("programFilterStatus")?.value || "").trim();
+    const month = ($("programFilterMonth")?.value || "").trim();
+    return state.programs.filter(item => {
+      const haystack = [item.content, item.location, item.lead, item.participants, item.note, item.status, formatDate(item.date)].join(" ").toLowerCase();
+      if (keyword && !haystack.includes(keyword)) return false;
+      if (status && item.status !== status) return false;
+      if (month && !String(item.date || "").startsWith(month)) return false;
+      return true;
+    });
+  }
+
+  function renderProgramSummary(programs = getFilteredPrograms()) {
+    const total = programs.length;
+    const upcoming = programs.filter(item => item.status === "Sắp diễn ra").length;
+    const done = programs.filter(item => item.status === "Đã thực hiện").length;
+    const postponed = programs.filter(item => item.status === "Hoãn").length;
+    if ($("programStatTotal")) $("programStatTotal").textContent = String(total);
+    if ($("programStatUpcoming")) $("programStatUpcoming").textContent = String(upcoming);
+    if ($("programStatDone")) $("programStatDone").textContent = String(done);
+    if ($("programStatPostponed")) $("programStatPostponed").textContent = String(postponed);
+  }
+
+  function renderPrograms() {
+    const body = $("programBody");
+    if (!body) return;
+    const programs = getFilteredPrograms();
+    body.innerHTML = "";
+    if (!state.programs.length) {
+      body.innerHTML = '<tr><td colspan="10"><div class="empty-state">Chưa có chương trình công tác nào. Hãy nhập chương trình đầu tiên.</div></td></tr>';
+      return;
+    }
+    if (!programs.length) {
+      body.innerHTML = '<tr><td colspan="10"><div class="empty-state">Không có chương trình phù hợp với điều kiện lọc hiện tại.</div></td></tr>';
+      return;
+    }
+    programs.forEach((item, idx) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td>${escapeHtml(formatDate(item.date))}</td>
+        <td>${escapeHtml(item.time || "-")}</td>
+        <td><div class="task-title">${escapeHtml(item.content)}</div></td>
+        <td>${escapeHtml(item.location || "-")}</td>
+        <td>${escapeHtml(item.lead || "-")}</td>
+        <td>${escapeHtml(item.participants || "-")}</td>
+        <td><span class="state-tag ${programStatusClass(item.status)}">${escapeHtml(item.status)}</span></td>
+        <td>${escapeHtml(item.note || "-")}</td>
+        <td>
+          <div class="flex">
+            <button class="secondary" data-program-action="edit" data-id="${escapeHtml(item.id)}">Sửa</button>
+            <button class="danger" data-program-action="delete" data-id="${escapeHtml(item.id)}">Xóa</button>
+          </div>
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  const WORK_PROGRAM_TABLE_STORAGE_KEY = "pc07_work_program_table_today_v1";
+  let selectedWorkProgramDate = new Date();
+
+  function pad2(value) {
+    return String(value).padStart(2, "0");
+  }
+
+  function makeDateOnly(date = new Date()) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  function getDateKey(date = new Date()) {
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+  }
+
+  function getTodayKey() {
+    return getDateKey(new Date());
+  }
+
+  function dateFromKey(key) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(key || ""))) return makeDateOnly(new Date());
+    const [year, month, day] = key.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  function addDays(date, days) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  }
+
+  function getWeekdayName(date) {
+    const weekdays = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+    return weekdays[date.getDay()];
+  }
+
+  function getProgramDateLabel(date = new Date()) {
+    return `${getWeekdayName(date)}, ngày ${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
+  }
+
+  function getProgramShortDateLabel(date = new Date()) {
+    return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
+  }
+
+  function getTodayLabel() {
+    return getProgramDateLabel(new Date());
+  }
+
+  function getSelectedWorkProgramDate() {
+    selectedWorkProgramDate = makeDateOnly(selectedWorkProgramDate || new Date());
+    return selectedWorkProgramDate;
+  }
+
+  function setSelectedWorkProgramDate(date) {
+    selectedWorkProgramDate = makeDateOnly(date || new Date());
+  }
+
+  function isNowInRange(start, end) {
+    const now = new Date();
+    return now >= start && now < end;
+  }
+
+  function isTodayProgramEditableForDate(date) {
+    // Lịch công tác hôm nay chỉ mở từ 00:00 đến trước 07:30 của ngày đang chọn.
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+    const end = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 7, 30, 0, 0);
+    return isNowInRange(start, end);
+  }
+
+  function isTodayProgramLocked() {
+    return !isTodayProgramEditableForDate(getSelectedWorkProgramDate());
+  }
+
+  function isPreviousResultEditableForDate(date) {
+    // Kết quả công việc hôm trước được bổ sung trước 07:30 của ngày đang chọn
+    // để xử lý trường hợp qua ngày mà hôm trước chưa nhập kết quả công việc hôm nay.
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+    const end = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 7, 30, 0, 0);
+    return isNowInRange(start, end);
+  }
+
+  function isPreviousResultLocked() {
+    return !isPreviousResultEditableForDate(getSelectedWorkProgramDate());
+  }
+
+  function isTodayResultEditableForDate(date) {
+    // Kết quả công việc hôm nay chỉ mở trong ngày đang chọn.
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+    const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 0, 0, 0, 0);
+    return isNowInRange(start, end);
+  }
+
+  function isTodayResultLocked() {
+    return !isTodayResultEditableForDate(getSelectedWorkProgramDate());
+  }
+
+  function isTomorrowPlanEditableForDate(date) {
+    // Dự kiến lịch hôm sau cho phép nhập trong ngày đang chọn.
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+    const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 0, 0, 0, 0);
+    return isNowInRange(start, end);
+  }
+
+  function isTomorrowPlanLocked() {
+    return !isTomorrowPlanEditableForDate(getSelectedWorkProgramDate());
+  }
+
+  function getProgramFieldBucket(dayValues, field) {
+    if (!dayValues || Array.isArray(dayValues) || typeof dayValues !== "object") return {};
+    // Tương thích dữ liệu cũ: phiên bản đầu lưu trực tiếp lịch hôm nay dưới key tên cán bộ.
+    if (field === "today" && !dayValues.today && Object.values(dayValues).some(value => typeof value === "string")) {
+      return dayValues;
+    }
+    const bucket = dayValues[field];
+    return bucket && typeof bucket === "object" && !Array.isArray(bucket) ? bucket : {};
+  }
+
+  function getProgramValue(data, dayKey, field, person) {
+    const dayValues = data[dayKey] || {};
+    const bucket = getProgramFieldBucket(dayValues, field);
+    return bucket[person] || "";
+  }
+
+  function setProgramFieldValue(data, dayKey, field, person, value) {
+    if (!data[dayKey] || Array.isArray(data[dayKey]) || typeof data[dayKey] !== "object") data[dayKey] = {};
+    if (!data[dayKey][field] || typeof data[dayKey][field] !== "object") data[dayKey][field] = {};
+    if (value) data[dayKey][field][person] = value;
+    else delete data[dayKey][field][person];
+  }
+
+  function readProgramTableData() {
+    try {
+      const raw = localStorage.getItem(WORK_PROGRAM_TABLE_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function saveProgramTableData(data) {
+    try {
+      localStorage.setItem(WORK_PROGRAM_TABLE_STORAGE_KEY, JSON.stringify(data || {}));
+    } catch (err) {
+      console.warn("Không lưu được chương trình công tác", err);
+    }
+  }
+
+  function getWorkProgramPeople() {
+    return Array.from(document.querySelectorAll("#programBody tr[data-person]")).map(row => row.getAttribute("data-person") || "").filter(Boolean);
+  }
+
+  let selectedProgramReportPerson = "";
+
+  function getDateRangeKeys(fromKey, toKey) {
+    const start = dateFromKey(fromKey);
+    const end = dateFromKey(toKey);
+    if (start > end) return [];
+    const keys = [];
+    for (let d = makeDateOnly(start); d <= end; d = addDays(d, 1)) keys.push(getDateKey(d));
+    return keys;
+  }
+
+  function getProgramReportRange() {
+    const todayKey = getTodayKey();
+    const fromInput = $("programReportFrom");
+    const toInput = $("programReportTo");
+    let fromKey = fromInput?.value || todayKey;
+    let toKey = toInput?.value || todayKey;
+    if (dateFromKey(fromKey) > dateFromKey(toKey)) {
+      const tmp = fromKey; fromKey = toKey; toKey = tmp;
+      if (fromInput) fromInput.value = fromKey;
+      if (toInput) toInput.value = toKey;
+    }
+    return { fromKey, toKey, keys: getDateRangeKeys(fromKey, toKey) };
+  }
+
+  function splitProgramReportLines(text) {
+    return String(text || "")
+      .split(/\r?\n|;/)
+      .map(line => line.replace(/^\s*[-–—•*]+\s*/, "").trim())
+      .filter(Boolean);
+  }
+
+  function normalizeProgramReportLineForUnique(text) {
+    return String(text || "")
+      .replace(/^[\s\-–—•*]+/, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLocaleLowerCase("vi-VN");
+  }
+
+  function getProgramReportItems(person, data, rangeKeys) {
+    const rows = [];
+    const seen = new Set();
+    rangeKeys.forEach(dayKey => {
+      const split = normalizeProgramSplitValue(getProgramValue(data, dayKey, "todayResult", person));
+      [...splitProgramReportLines(split.morning), ...splitProgramReportLines(split.afternoon)].forEach(text => {
+        const key = normalizeProgramReportLineForUnique(text);
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        rows.push({ text });
+      });
+    });
+    return rows;
+  }
+
+  function countProgramReportItems(person, data, rangeKeys) {
+    return getProgramReportItems(person, data, rangeKeys).length;
+  }
+
+  function getCurrentProgramReportItems() {
+    if (!selectedProgramReportPerson) return [];
+    const data = readProgramTableData();
+    const { keys } = getProgramReportRange();
+    return getProgramReportItems(selectedProgramReportPerson, data, keys);
+  }
+
+  function renderProgramReportPeople(selectedPerson = "") {
+    const container = $("programReportPeople");
+    if (!container) return;
+    const data = readProgramTableData();
+    const { keys } = getProgramReportRange();
+    container.innerHTML = getWorkProgramPeople().map(person => {
+      const count = countProgramReportItems(person, data, keys);
+      return `<button type="button" class="program-report-person-btn${person === selectedPerson ? " active" : ""}" data-report-person="${escapeHtml(person)}"><span>${escapeHtml(person)}</span><span class="program-report-person-count">${count}</span></button>`;
+    }).join("");
+  }
+
+  function resetProgramReportResult() {
+    selectedProgramReportPerson = "";
+    renderProgramReportPeople();
+    if ($("programReportResultTitle")) $("programReportResultTitle").textContent = "Chọn cán bộ để xem kết quả";
+    if ($("programReportResult")) {
+      $("programReportResult").className = "program-report-empty";
+      $("programReportResult").textContent = "Ấn vào tên từng cán bộ để xem kết quả công việc trong khoảng thời gian đã chọn.";
+    }
+  }
+
+  function renderProgramReportForPerson(person) {
+    const title = $("programReportResultTitle");
+    const result = $("programReportResult");
+    if (!title || !result) return;
+    selectedProgramReportPerson = person || "";
+    const data = readProgramTableData();
+    const { fromKey, toKey, keys } = getProgramReportRange();
+    const items = getProgramReportItems(selectedProgramReportPerson, data, keys);
+    title.textContent = `${selectedProgramReportPerson} — từ ${getProgramDateLabel(dateFromKey(fromKey))} đến ${getProgramDateLabel(dateFromKey(toKey))}`;
+    renderProgramReportPeople(selectedProgramReportPerson);
+    if (!items.length) {
+      result.className = "program-report-empty";
+      result.innerHTML = "Không có dữ liệu kết quả công việc trong khoảng thời gian đã chọn.";
+      return;
+    }
+    result.className = "";
+    result.innerHTML = `<table class="program-report-table"><thead><tr><th>STT</th><th>Kết quả công việc</th></tr></thead><tbody>${items.map((item, idx) => `<tr><td>${idx + 1}</td><td><ul class="program-report-bullet"><li>${escapeHtml(item.text)}</li></ul></td></tr>`).join("")}</tbody></table>`;
+  }
+
+  function getProgramReportFileName() {
+    const { fromKey, toKey } = getProgramReportRange();
+    const safeName = (selectedProgramReportPerson || "bao-cao").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase() || "bao-cao";
+    return `bao-cao-ket-qua-${safeName}-${fromKey}-den-${toKey}`;
+  }
+
+  const XLSX_CRC_TABLE = (() => {
+    const table = [];
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+      table[n] = c >>> 0;
+    }
+    return table;
+  })();
+
+  function utf8Bytes(text) {
+    return new TextEncoder().encode(String(text || ""));
+  }
+
+  function xlsxCrc32(bytes) {
+    let crc = 0xffffffff;
+    for (let i = 0; i < bytes.length; i++) crc = XLSX_CRC_TABLE[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
+    return (crc ^ 0xffffffff) >>> 0;
+  }
+
+  function xlsxU16(value) {
+    return [value & 0xff, (value >>> 8) & 0xff];
+  }
+
+  function xlsxU32(value) {
+    return [value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff];
+  }
+
+  function makeXlsxZip(files) {
+    const fileParts = [];
+    const centralParts = [];
+    let offset = 0;
+    Object.entries(files).forEach(([name, content]) => {
+      const nameBytes = utf8Bytes(name);
+      const dataBytes = utf8Bytes(content);
+      const crc = xlsxCrc32(dataBytes);
+      const localHeader = new Uint8Array([
+        ...xlsxU32(0x04034b50), ...xlsxU16(20), ...xlsxU16(0x0800), ...xlsxU16(0),
+        ...xlsxU16(0), ...xlsxU16(0), ...xlsxU32(crc), ...xlsxU32(dataBytes.length),
+        ...xlsxU32(dataBytes.length), ...xlsxU16(nameBytes.length), ...xlsxU16(0)
+      ]);
+      fileParts.push(localHeader, nameBytes, dataBytes);
+      const centralHeader = new Uint8Array([
+        ...xlsxU32(0x02014b50), ...xlsxU16(20), ...xlsxU16(20), ...xlsxU16(0x0800),
+        ...xlsxU16(0), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU32(crc),
+        ...xlsxU32(dataBytes.length), ...xlsxU32(dataBytes.length), ...xlsxU16(nameBytes.length),
+        ...xlsxU16(0), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU32(0),
+        ...xlsxU32(offset)
+      ]);
+      centralParts.push(centralHeader, nameBytes);
+      offset += localHeader.length + nameBytes.length + dataBytes.length;
+    });
+    const centralOffset = offset;
+    const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+    const fileCount = Object.keys(files).length;
+    const end = new Uint8Array([
+      ...xlsxU32(0x06054b50), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU16(fileCount),
+      ...xlsxU16(fileCount), ...xlsxU32(centralSize), ...xlsxU32(centralOffset), ...xlsxU16(0)
+    ]);
+    return new Blob([...fileParts, ...centralParts, end], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  }
+
+  function xlsxEscapeXml(text) {
+    return String(text ?? "").replace(/[<>&"']/g, ch => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" }[ch]));
+  }
+
+  function xlsxColumnName(index) {
+    let name = "";
+    while (index > 0) {
+      const rem = (index - 1) % 26;
+      name = String.fromCharCode(65 + rem) + name;
+      index = Math.floor((index - 1) / 26);
+    }
+    return name;
+  }
+
+  function xlsxCell(row, col, text, style = 1) {
+    const ref = `${xlsxColumnName(col)}${row}`;
+    return `<c r="${ref}" t="inlineStr" s="${style}"><is><t>${xlsxEscapeXml(text)}</t></is></c>`;
+  }
+
+  function makeProgramReportXlsxBlob(person, fromKey, toKey, items) {
+    const rows = [];
+    rows.push(`<row r="1">${xlsxCell(1, 1, "Báo cáo kết quả công việc", 2)}</row>`);
+    rows.push(`<row r="2">${xlsxCell(2, 1, "Cán bộ")}${xlsxCell(2, 2, person)}</row>`);
+    rows.push(`<row r="3">${xlsxCell(3, 1, "Khoảng thời gian")}${xlsxCell(3, 2, `${formatDate(fromKey)} - ${formatDate(toKey)}`)}</row>`);
+    rows.push(`<row r="5">${xlsxCell(5, 1, "STT", 2)}${xlsxCell(5, 2, "Kết quả công việc", 2)}</row>`);
+    items.forEach((item, idx) => {
+      const r = idx + 6;
+      rows.push(`<row r="${r}">${xlsxCell(r, 1, idx + 1)}${xlsxCell(r, 2, `• ${item.text}`)}</row>`);
+    });
+    const lastRow = items.length + 5;
+    const sheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <cols><col min="1" max="1" width="10" customWidth="1"/><col min="2" max="2" width="80" customWidth="1"/></cols>
+  <sheetData>${rows.join("")}</sheetData>
+  <mergeCells count="1"><mergeCell ref="A1:B1"/></mergeCells>
+</worksheet>`;
+    const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="2"><font><sz val="12"/><name val="Times New Roman"/></font><font><b/><sz val="12"/><name val="Times New Roman"/></font></fonts>
+  <fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
+  <borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyAlignment="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf></cellXfs>
+  <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+    return makeXlsxZip({
+      "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`,
+      "_rels/.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+      "xl/workbook.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Báo cáo" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+      "xl/_rels/workbook.xml.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`,
+      "xl/worksheets/sheet1.xml": sheetXml,
+      "xl/styles.xml": stylesXml
+    });
+  }
+
+  function exportProgramReportExcel() {
+    if (!selectedProgramReportPerson) {
+      leeMinNguyenAlert("Hãy chọn một cán bộ để xuất Excel.");
+      return;
+    }
+    const items = getCurrentProgramReportItems();
+    if (!items.length) {
+      leeMinNguyenAlert("Không có dữ liệu kết quả công việc trong khoảng thời gian đã chọn.");
+      return;
+    }
+    const { fromKey, toKey } = getProgramReportRange();
+    const blob = makeProgramReportXlsxBlob(selectedProgramReportPerson, fromKey, toKey, items);
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${getProgramReportFileName()}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  }
+
+  function printProgramReport() {
+    if (!selectedProgramReportPerson) {
+      leeMinNguyenAlert("Hãy chọn một cán bộ để in báo cáo.");
+      return;
+    }
+    const items = getCurrentProgramReportItems();
+    if (!items.length) {
+      leeMinNguyenAlert("Không có dữ liệu kết quả công việc trong khoảng thời gian đã chọn.");
+      return;
+    }
+    const { fromKey, toKey } = getProgramReportRange();
+    const rows = items.map((item, idx) => `<tr><td>${idx + 1}</td><td><ul><li>${escapeHtml(item.text)}</li></ul></td></tr>`).join("");
+    const win = window.open("", "_blank", "width=900,height=700");
+    if (!win) {
+      leeMinNguyenAlert("Trình duyệt đang chặn cửa sổ in. Hãy cho phép pop-up rồi thử lại.");
+      return;
+    }
+    win.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Báo cáo kết quả công việc</title>
+      <style>
+        body{font-family:"Times New Roman",Times,serif;margin:24px;color:#111}
+        h1{text-align:center;text-transform:uppercase;font-size:22px;margin:0 0 10px}
+        .meta{text-align:center;margin-bottom:14px;line-height:1.5}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
+        th,td{border:1px solid #333;padding:8px 10px;vertical-align:middle;font-size:14px;text-align:center}
+        th{background:#f2f2f2;text-align:center}
+        td:first-child{width:60px;text-align:center;font-weight:700}
+        ul{display:inline-block;margin:0;padding-left:18px;text-align:left}
+        @media print{body{margin:16px}}
+      </style></head><body>
+      <h1>Báo cáo kết quả công việc</h1>
+      <div class="meta"><b>${escapeHtml(selectedProgramReportPerson)}</b><br>Từ ${escapeHtml(getProgramDateLabel(dateFromKey(fromKey)))} đến ${escapeHtml(getProgramDateLabel(dateFromKey(toKey)))}</div>
+      <table><thead><tr><th>STT</th><th>Kết quả công việc</th></tr></thead><tbody>${rows}</tbody></table>
+      <script>window.onload=()=>{window.print();};<\/script></body></html>`);
+    win.document.close();
+  }
+
+  function programSplitToPlainText(value) {
+    const split = normalizeProgramSplitValue(value);
+    const parts = [];
+    if (split.morning.trim()) parts.push(`Sáng: ${split.morning.trim()}`);
+    if (split.afternoon.trim()) parts.push(`Chiều: ${split.afternoon.trim()}`);
+    return parts.join("\n");
+  }
+
+  function plainTextToHtml(text) {
+    return escapeHtml(text).replace(/\n/g, "<br>");
+  }
+
+  function getWorkProgramTableExportRows() {
+    const data = readProgramTableData();
+    const fields = ["previous", "today", "todayResult", "tomorrow"];
+    return getWorkProgramPeople().map((person, idx) => {
+      const row = { stt: idx + 1, person };
+      fields.forEach(field => {
+        row[field] = programSplitToPlainText(getWorkProgramCellValue(data, field, person));
+      });
+      return row;
+    });
+  }
+
+  function getWorkProgramTableFileName() {
+    return `chuong-trinh-cong-tac-${getDateKey(getSelectedWorkProgramDate())}`;
+  }
+
+  function exportWorkProgramTableExcel() {
+    const selectedDate = getSelectedWorkProgramDate();
+    const rows = getWorkProgramTableExportRows();
+    const previousDate = addDays(selectedDate, -1);
+    const tomorrowDate = addDays(selectedDate, 1);
+    const bodyRows = rows.map(row => `
+      <tr>
+        <td>${row.stt}</td>
+        <td>${escapeHtml(row.person)}</td>
+        <td>${plainTextToHtml(row.previous)}</td>
+        <td>${plainTextToHtml(row.today)}</td>
+        <td>${plainTextToHtml(row.todayResult)}</td>
+        <td>${plainTextToHtml(row.tomorrow)}</td>
+      </tr>`).join("");
+    const html = `\ufeff<html><head><meta charset="UTF-8"><style>
+      body{font-family:"Times New Roman",Times,serif}
+      table{border-collapse:collapse;width:100%}
+      th,td{border:1px solid #333;padding:8px;text-align:center;vertical-align:middle;white-space:normal}
+      th{font-weight:bold;background:#f2f2f2}
+      tr:nth-child(even) td{background:#fffbe8}
+    </style></head><body>
+      <table>
+        <thead>
+          <tr><th colspan="6">CHƯƠNG TRÌNH CÔNG TÁC NGÀY ${escapeHtml(getProgramDateLabel(selectedDate))}</th></tr>
+          <tr>
+            <th>STT</th>
+            <th>Họ và tên</th>
+            <th>Kết quả công việc hôm trước<br>${escapeHtml(getProgramDateLabel(previousDate))}</th>
+            <th>Lịch công tác hôm nay<br>${escapeHtml(getProgramDateLabel(selectedDate))}</th>
+            <th>Kết quả công việc hôm nay<br>${escapeHtml(getProgramDateLabel(selectedDate))}</th>
+            <th>Dự kiến lịch hôm sau<br>${escapeHtml(getProgramDateLabel(tomorrowDate))}</th>
+          </tr>
+        </thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </body></html>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${getWorkProgramTableFileName()}.xls`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  }
+
+  function printWorkProgramTable() {
+    const selectedDate = getSelectedWorkProgramDate();
+    const rows = getWorkProgramTableExportRows();
+    const previousDate = addDays(selectedDate, -1);
+    const tomorrowDate = addDays(selectedDate, 1);
+    const bodyRows = rows.map(row => `
+      <tr>
+        <td>${row.stt}</td>
+        <td>${escapeHtml(row.person)}</td>
+        <td>${plainTextToHtml(row.previous)}</td>
+        <td>${plainTextToHtml(row.today)}</td>
+        <td>${plainTextToHtml(row.todayResult)}</td>
+        <td>${plainTextToHtml(row.tomorrow)}</td>
+      </tr>`).join("");
+    const win = window.open("", "_blank", "width=1200,height=760");
+    if (!win) {
+      leeMinNguyenAlert("Trình duyệt đang chặn cửa sổ in. Hãy cho phép pop-up rồi thử lại.");
+      return;
+    }
+    win.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Chương trình công tác</title>
+      <style>
+        body{font-family:"Times New Roman",Times,serif;margin:20px;color:#111}
+        h1,h2{text-align:center;margin:0 0 8px;text-transform:uppercase}
+        .date{text-align:center;margin-bottom:14px;font-weight:bold}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
+        th,td{border:1px solid #333;padding:7px 6px;font-size:14px;vertical-align:middle;text-align:center;white-space:pre-line}
+        th{background:#f2f2f2}
+        tbody tr:nth-child(even) td{background:#fffbe8}
+        td:nth-child(2){font-weight:bold;white-space:nowrap}
+        @media print{body{margin:12px}tbody tr:nth-child(even) td{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fffbe8!important}}
+      </style></head><body>
+      <h2>Phòng Cảnh sát PCCC và CNCH</h2>
+      <h1>Chương trình công tác</h1>
+      <div class="date">Ngày ${escapeHtml(getProgramDateLabel(selectedDate))}</div>
+      <table><thead><tr>
+        <th>STT</th>
+        <th>Họ và tên</th>
+        <th>Kết quả công việc hôm trước<br>${escapeHtml(getProgramDateLabel(previousDate))}</th>
+        <th>Lịch công tác hôm nay<br>${escapeHtml(getProgramDateLabel(selectedDate))}</th>
+        <th>Kết quả công việc hôm nay<br>${escapeHtml(getProgramDateLabel(selectedDate))}</th>
+        <th>Dự kiến lịch hôm sau<br>${escapeHtml(getProgramDateLabel(tomorrowDate))}</th>
+      </tr></thead><tbody>${bodyRows}</tbody></table>
+      <script>window.onload=()=>{window.print();};<\/script></body></html>`);
+    win.document.close();
+  }
+
+  function openProgramReportModal() {
+    const modal = $("programReportModal");
+    if (!modal) return;
+    const selectedKey = getDateKey(getSelectedWorkProgramDate());
+    if ($("programReportFrom") && !$("programReportFrom").value) $("programReportFrom").value = selectedKey;
+    if ($("programReportTo") && !$("programReportTo").value) $("programReportTo").value = selectedKey;
+    modal.classList.remove("hidden");
+    resetProgramReportResult();
+  }
+
+  function closeProgramReportModal() {
+    const modal = $("programReportModal");
+    if (modal) modal.classList.add("hidden");
+  }
+
+  function openWorkProgramDatePicker() {
+    const oldInput = $("workProgramDatePicker");
+    if (oldInput) oldInput.remove();
+
+    const input = document.createElement("input");
+    input.type = "date";
+    input.id = "workProgramDatePicker";
+    input.value = getDateKey(getSelectedWorkProgramDate());
+    input.setAttribute("aria-label", "Chọn ngày xem chương trình công tác");
+
+    const button = $("btnProgramDatePicker");
+    const rect = button ? button.getBoundingClientRect() : { left: 12, bottom: 56 };
+    input.style.position = "fixed";
+    input.style.left = `${Math.max(8, Math.round(rect.left))}px`;
+    input.style.top = `${Math.max(8, Math.round(rect.bottom + 4))}px`;
+    input.style.width = "1px";
+    input.style.height = "1px";
+    input.style.opacity = "0.01";
+    input.style.zIndex = "99999";
+    input.style.border = "0";
+    input.style.padding = "0";
+
+    const applySelectedDate = () => {
+      if (!input.value) return;
+      setSelectedWorkProgramDate(dateFromKey(input.value));
+      input.remove();
+      renderWorkProgramSection();
+    };
+
+    input.addEventListener("change", applySelectedDate);
+    input.addEventListener("input", applySelectedDate);
+    input.addEventListener("blur", () => {
+      setTimeout(() => {
+        const currentInput = $("workProgramDatePicker");
+        if (currentInput === input) input.remove();
+      }, 250);
+    });
+
+    document.body.appendChild(input);
+    input.focus({ preventScroll: true });
+    try {
+      if (typeof input.showPicker === "function") input.showPicker();
+      else input.click();
+    } catch (err) {
+      input.click();
+    }
+  }
+
+  function updateWorkProgramTitleDate() {
+    const title = $("mainTitle");
+    if (!title) return;
+    const selectedDate = getSelectedWorkProgramDate();
+    title.innerHTML = `Chương trình công tác <span class="work-program-title-date"><button type="button" class="work-program-date-btn" id="btnProgramDatePicker" title="Bấm để chọn ngày xem lại lịch">${escapeHtml(getProgramDateLabel(selectedDate))}</button></span>`;
+    const dateButton = $("btnProgramDatePicker");
+    if (dateButton) {
+      dateButton.addEventListener("click", openWorkProgramDatePicker);
+      dateButton.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openWorkProgramDatePicker();
+        }
+      });
+    }
+  }
+
+  function updateWorkProgramHeaderDates() {
+    const selectedDate = getSelectedWorkProgramDate();
+    const previousDate = addDays(selectedDate, -1);
+    const tomorrowDate = addDays(selectedDate, 1);
+    const labels = {
+      programPreviousDateLabel: getProgramDateLabel(previousDate),
+      programTodayDateLabel: getProgramDateLabel(selectedDate),
+      programTodayResultDateLabel: getProgramDateLabel(selectedDate),
+      programTomorrowDateLabel: getProgramDateLabel(tomorrowDate)
+    };
+    Object.entries(labels).forEach(([id, text]) => {
+      const el = $(id);
+      if (el) el.textContent = text;
+    });
+  }
+
+  function normalizeProgramSplitValue(value) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return {
+        morning: String(value.morning || ""),
+        afternoon: String(value.afternoon || "")
+      };
+    }
+    const text = String(value || "");
+    return { morning: text, afternoon: "" };
+  }
+
+  function isProgramSplitValueEmpty(value) {
+    const split = normalizeProgramSplitValue(value);
+    return !split.morning.trim() && !split.afternoon.trim();
+  }
+
+  function makeProgramSplitValue(morning, afternoon) {
+    const value = {
+      morning: String(morning || "").trim(),
+      afternoon: String(afternoon || "").trim()
+    };
+    return isProgramSplitValueEmpty(value) ? "" : value;
+  }
+
+  function renderProgramSplitCell(cell, value) {
+    const split = normalizeProgramSplitValue(value);
+    const morning = split.morning.trim();
+    const afternoon = split.afternoon.trim();
+    cell.innerHTML = `
+      <div class="program-cell-split">
+        <div class="program-cell-line">
+          <span class="program-cell-label">Sáng</span>
+          <span class="program-cell-text${morning ? "" : " empty"}">${morning ? escapeHtml(morning) : "&nbsp;"}</span>
+        </div>
+        <div class="program-cell-line">
+          <span class="program-cell-label">Chiều</span>
+          <span class="program-cell-text${afternoon ? "" : " empty"}">${afternoon ? escapeHtml(afternoon) : "&nbsp;"}</span>
+        </div>
+      </div>`;
+  }
+
+  function getWorkProgramCellValue(data, field, person) {
+    const selectedDate = getSelectedWorkProgramDate();
+    const selectedKey = getDateKey(selectedDate);
+    const yesterdayKey = getDateKey(addDays(selectedDate, -1));
+
+    if (field === "previous") {
+      return getProgramValue(data, yesterdayKey, "todayResult", person);
+    }
+
+    if (field === "today") {
+      const todayValue = getProgramValue(data, selectedKey, "today", person);
+      if (!isProgramSplitValueEmpty(todayValue)) return todayValue;
+      return getProgramValue(data, yesterdayKey, "tomorrow", person);
+    }
+
+    return getProgramValue(data, selectedKey, field, person);
+  }
+
+  function renderWorkProgramSection() {
+    updateWorkProgramTitleDate();
+    updateWorkProgramHeaderDates();
+    const data = readProgramTableData();
+    const selectedDate = getSelectedWorkProgramDate();
+    const selectedShortDate = getProgramShortDateLabel(selectedDate);
+    const fieldConfig = {
+      previous: {
+        locked: isPreviousResultLocked(),
+        lockedTitle: `Chỉ được nhập trước 07:30, ngày ${selectedShortDate}`,
+        editTitle: `Double click để nhập trước 07:30, ngày ${selectedShortDate}.`
+      },
+      today: {
+        locked: isTodayProgramLocked(),
+        lockedTitle: `Chỉ được nhập trước 07:30, ngày ${selectedShortDate}`,
+        editTitle: `Double click để nhập trước 07:30, ngày ${selectedShortDate}.`
+      },
+      todayResult: {
+        locked: isTodayResultLocked(),
+        lockedTitle: `Chỉ được nhập trong ngày ${selectedShortDate}`,
+        editTitle: `Double click để nhập trong ngày ${selectedShortDate}.`
+      },
+      tomorrow: {
+        locked: isTomorrowPlanLocked(),
+        lockedTitle: `Chỉ được nhập trong ngày ${selectedShortDate}`,
+        editTitle: `Double click để nhập trong ngày ${selectedShortDate}. Nội dung sẽ tự chiếu sang lịch công tác hôm nay khi qua ngày nếu chưa nhập lịch hôm nay trước 07:30.`
+      }
+    };
+
+    document.querySelectorAll("#programBody tr").forEach(row => {
+      const person = row.getAttribute("data-person") || "";
+      row.querySelectorAll("td[data-field]").forEach(cell => {
+        const field = cell.getAttribute("data-field") || "today";
+        renderProgramSplitCell(cell, getWorkProgramCellValue(data, field, person));
+      });
+    });
+
+    document.querySelectorAll('#programBody td[data-editable-program="true"]').forEach(cell => {
+      const field = cell.getAttribute("data-field") || "today";
+      const config = fieldConfig[field] || fieldConfig.today;
+      cell.classList.toggle("locked", Boolean(config.locked));
+      cell.title = config.locked ? config.lockedTitle : config.editTitle;
+    });
+
+  }
+
+  function getEditableProgramFieldConfig(field) {
+    const selectedDate = getSelectedWorkProgramDate();
+    const selectedShortDate = getProgramShortDateLabel(selectedDate);
+    if (field === "previous") {
+      return {
+        locked: isPreviousResultLocked(),
+        lockedMessage: `Chỉ được nhập trước 07:30, ngày ${selectedShortDate}`
+      };
+    }
+    if (field === "todayResult") {
+      return {
+        locked: isTodayResultLocked(),
+        lockedMessage: `Chỉ được nhập trong ngày ${selectedShortDate}`
+      };
+    }
+    if (field === "tomorrow") {
+      return {
+        locked: isTomorrowPlanLocked(),
+        lockedMessage: `Chỉ được nhập trong ngày ${selectedShortDate}`
+      };
+    }
+    return {
+      locked: isTodayProgramLocked(),
+      lockedMessage: `Chỉ được nhập trước 07:30, ngày ${selectedShortDate}`
+    };
+  }
+
+  function startEditingProgramCell(cell) {
+    if (!cell || cell.querySelector("textarea")) return;
+    const field = cell.getAttribute("data-field") || "today";
+    const config = getEditableProgramFieldConfig(field);
+    if (config.locked) {
+      leeMinNguyenAlert(config.lockedMessage);
+      renderWorkProgramSection();
+      return;
+    }
+    const person = cell.getAttribute("data-person") || cell.closest("tr")?.getAttribute("data-person") || "";
+    const data = readProgramTableData();
+    const currentValue = getWorkProgramCellValue(data, field, person);
+    const originalSplit = normalizeProgramSplitValue(currentValue);
+    const editor = document.createElement("div");
+    editor.className = "program-split-editor";
+    editor.innerHTML = `
+      <div class="program-editor-row">
+        <span class="program-editor-label">Sáng</span>
+        <textarea class="program-cell-editor" data-shift="morning" placeholder="Nhập nội dung buổi sáng"></textarea>
+      </div>
+      <div class="program-editor-row">
+        <span class="program-editor-label">Chiều</span>
+        <textarea class="program-cell-editor" data-shift="afternoon" placeholder="Nhập nội dung buổi chiều"></textarea>
+      </div>`;
+    cell.textContent = "";
+    cell.appendChild(editor);
+    const morningEditor = editor.querySelector('textarea[data-shift="morning"]');
+    const afternoonEditor = editor.querySelector('textarea[data-shift="afternoon"]');
+    morningEditor.value = originalSplit.morning;
+    afternoonEditor.value = originalSplit.afternoon;
+    morningEditor.focus();
+    morningEditor.select();
+
+    let saved = false;
+    const save = () => {
+      if (saved || !cell.contains(editor)) return;
+      saved = true;
+      const latestData = readProgramTableData();
+      const selectedDate = getSelectedWorkProgramDate();
+      const saveDate = field === "previous" ? addDays(selectedDate, -1) : selectedDate;
+      const saveField = field === "previous" ? "todayResult" : field;
+      const selectedKey = getDateKey(saveDate);
+      setProgramFieldValue(latestData, selectedKey, saveField, person, makeProgramSplitValue(morningEditor.value, afternoonEditor.value));
+      saveProgramTableData(latestData);
+      renderWorkProgramSection();
+    };
+
+    const cancel = () => {
+      if (saved || !cell.contains(editor)) return;
+      saved = true;
+      renderProgramSplitCell(cell, currentValue);
+    };
+
+    editor.addEventListener("focusout", () => {
+      setTimeout(() => {
+        if (!editor.contains(document.activeElement)) save();
+      }, 0);
+    });
+    editor.querySelectorAll("textarea").forEach(input => {
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          cancel();
+        } else if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+          event.preventDefault();
+          save();
+        }
+      });
+    });
+  }
+
+  function resetProgramForm() {
+    // Không còn biểu mẫu trong thẻ Chương trình công tác.
+  }
+
+  function handleSaveProgram() {
+    const id = ($("programId").value || "").trim() || makeProgramId();
+    const content = ($("programContent").value || "").trim();
+    if (!content) {
+      leeMinNguyenAlert("Vui lòng nhập nội dung chương trình công tác.");
+      $("programContent").focus();
+      return;
+    }
+    const existing = state.programs.find(item => item.id === id);
+    const program = normalizeProgram({
+      id,
+      date: $("programDate").value,
+      time: $("programTime").value,
+      content,
+      location: $("programLocation").value,
+      lead: $("programLead").value,
+      participants: $("programParticipants").value,
+      status: $("programStatus").value,
+      note: $("programNote").value,
+      createdAt: existing ? existing.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+    state.programs = sortPrograms([...state.programs.filter(item => item.id !== id), program]);
+    saveLocalPrograms(state.programs);
+    renderWorkProgramSection();
+    resetProgramForm();
+    $("programSaveStatus").className = "status success";
+    $("programSaveStatus").textContent = "Đã lưu chương trình công tác trên trình duyệt này.";
+  }
+
+  function editProgram(programId) {
+    const item = state.programs.find(program => program.id === programId);
+    if (!item) return;
+    $("programId").value = item.id;
+    $("programDate").value = item.date || "";
+    $("programTime").value = item.time || "";
+    $("programContent").value = item.content || "";
+    $("programLocation").value = item.location || "";
+    $("programLead").value = item.lead || "";
+    $("programParticipants").value = item.participants || "";
+    $("programStatus").value = item.status || "Sắp diễn ra";
+    $("programNote").value = item.note || "";
+    $("programSaveStatus").className = "status info";
+    $("programSaveStatus").textContent = "Đang chỉnh sửa chương trình công tác đã chọn.";
+    $("programContent").focus();
+  }
+
+  function deleteProgram(programId) {
+    const item = state.programs.find(program => program.id === programId);
+    if (!item) return;
+    if (!confirm('Bạn chắc chắn muốn xóa chương trình "' + item.content + '"?')) return;
+    state.programs = sortPrograms(state.programs.filter(program => program.id !== programId));
+    saveLocalPrograms(state.programs);
+    renderWorkProgramSection();
+    resetProgramForm();
+  }
+
+  function clearProgramFilters() {
+    renderWorkProgramSection();
+  }
+
+  function openWorkProgramMode() {
+    navigateToAppView("program");
+  }
+
+  function exportProgramCsv() {
+    if (!state.programs.length) {
+      leeMinNguyenAlert("Chưa có dữ liệu chương trình công tác để xuất.");
+      return;
+    }
+    const rows = getFilteredPrograms().map((item, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${escapeHtml(formatDate(item.date))}</td>
+        <td>${escapeHtml(item.time || "")}</td>
+        <td>${escapeHtml(item.content || "")}</td>
+        <td>${escapeHtml(item.location || "")}</td>
+        <td>${escapeHtml(item.lead || "")}</td>
+        <td>${escapeHtml(item.participants || "")}</td>
+        <td>${escapeHtml(item.status || "")}</td>
+        <td>${escapeHtml(item.note || "")}</td>
+      </tr>
+    `).join("");
+    const html = `\ufeff<html><head><meta charset="UTF-8"></head><body><table border="1">
+      <tr><th>STT</th><th>Ngày</th><th>Thời gian</th><th>Nội dung</th><th>Địa điểm</th><th>Chủ trì</th><th>Thành phần</th><th>Trạng thái</th><th>Ghi chú</th></tr>${rows}
+    </table></body></html>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "chuong-trinh-cong-tac.xls";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  }
+
+  function printWorkProgram() {
+    const programs = getFilteredPrograms();
+    const rows = programs.map((item, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${escapeHtml(formatDate(item.date))}</td>
+        <td>${escapeHtml(item.time || "")}</td>
+        <td>${escapeHtml(item.content || "")}</td>
+        <td>${escapeHtml(item.location || "")}</td>
+        <td>${escapeHtml(item.lead || "")}</td>
+        <td>${escapeHtml(item.participants || "")}</td>
+        <td>${escapeHtml(item.status || "")}</td>
+        <td>${escapeHtml(item.note || "")}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="9">Không có dữ liệu.</td></tr>';
+    const win = window.open("", "_blank");
+    if (!win) {
+      leeMinNguyenAlert("Trình duyệt đang chặn cửa sổ in. Hãy cho phép pop-up để in chương trình.");
+      return;
+    }
+    win.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Chương trình công tác</title>
+      <style>
+        body{font-family:"Times New Roman",Times,serif;margin:24px;color:#111}
+        h1,h2{text-align:center;margin:0 0 8px;text-transform:uppercase}
+        table{width:100%;border-collapse:collapse;margin-top:16px}
+        th,td{border:1px solid #333;padding:7px 6px;font-size:14px;vertical-align:middle;text-align:center}
+        th{background:#f2f2f2}
+        td:nth-child(4),td:nth-child(7),td:nth-child(9){text-align:left}
+      </style></head><body>
+      <h2>Phòng Cảnh sát PCCC và CNCH</h2>
+      <h1>Chương trình công tác</h1>
+      <table><thead><tr><th>STT</th><th>Ngày</th><th>Thời gian</th><th>Nội dung</th><th>Địa điểm</th><th>Chủ trì</th><th>Thành phần</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead><tbody>${rows}</tbody></table>
+      <script>window.onload=()=>{window.print();};<\/script></body></html>`);
+    win.document.close();
+  }
+
+  function renderAll() {
+    populateFilters();
+    renderViewerSection();
+    renderAdminSection();
+    renderWorkProgramSection();
+  }
+
+  function toggleCustomAssigneeInput() {
+    const select = $("taskAssignee");
+    const input = $("taskAssigneeCustom");
+    const useCustom = select.value === "__custom__";
+    input.classList.toggle("hidden", !useCustom);
+    if (!useCustom) input.value = "";
+  }
+
+  function getCreateTaskAssignee() {
+    const selected = $("taskAssignee").value.trim();
+    if (selected === "__custom__") return $("taskAssigneeCustom").value.trim();
+    return selected;
+  }
+
+  function setDefaultAssignedWeek() {
+    $("taskAssignedWeek").value = getTodayAssignedWeek();
+    updateWeekDisplay("taskAssignedWeek", "taskAssignedWeekDisplay", "taskAssignedWeekInlineDisplay");
+  }
+
+  function resetForm() {
+    $("taskId").value = "";
+    $("taskTitle").value = "";
+    $("taskAssignee").value = "";
+    $("taskAssigneeCustom").value = "";
+    toggleCustomAssigneeInput();
+    setDefaultAssignedWeek();
+    $("taskDueDate").value = "";
+    $("taskStatus").value = "Đang thực hiện";
+    $("taskDescription").value = "";
+    clearCreateImageSelection();
+    $("taskNote").value = "";
+    clearCreateNoteAttachmentSelection();
+    $("adminSaveStatus").className = "status info";
+    $("adminSaveStatus").textContent = "Sẵn sàng cập nhật dữ liệu.";
+  }
+
+  function openEditTaskModal(taskId) {
+    const task = state.tasks.find(item => item.id === taskId);
+    if (!task) return;
+    $("editTaskId").value = task.id;
+    $("editTaskTitle").value = task.title;
+    ensureSelectOption("editTaskAssignee", task.assignee);
+    $("editTaskAssignee").value = task.assignee;
+    $("editTaskAssignedWeek").value = task.assignedWeek || "";
+    updateWeekDisplay("editTaskAssignedWeek", "editTaskAssignedWeekDisplay", "editTaskAssignedWeekInlineDisplay");
+    $("editTaskDueDate").value = task.dueDate;
+    $("editTaskStatus").value = normalizeTaskStatus(task.status);
+    const descriptionData = parseTaskDescription(task.description);
+    $("editTaskDescription").value = descriptionData.text;
+    revokeAttachmentPreviewUrls(state.editAttachments);
+    state.editAttachments = normalizeAttachmentList(descriptionData.attachments);
+    renderImagePreview("editTaskImagePreview", state.editAttachments);
+    const noteData = parseTaskNote(task.note);
+    $("editTaskNote").value = noteData.text;
+    revokeAttachmentPreviewUrls(state.editNoteAttachments);
+    state.editNoteAttachments = normalizeAttachmentList(noteData.attachments);
+    renderImagePreview("editTaskNotePreview", state.editNoteAttachments);
+    $("editTaskModalError").textContent = "";
+    $("editTaskModal").classList.remove("hidden");
+    const modalBody = $("editTaskModal").querySelector(".modal-body");
+    if (modalBody) modalBody.scrollTop = 0;
+    setTimeout(() => $("editTaskTitle").focus(), 30);
+  }
+
+  function closeEditTaskModal() {
+    $("editTaskModal").classList.add("hidden");
+    const modalBody = $("editTaskModal").querySelector(".modal-body");
+    if (modalBody) modalBody.scrollTop = 0;
+    $("editTaskId").value = "";
+    $("editTaskTitle").value = "";
+    $("editTaskAssignee").value = "";
+    $("editTaskAssignedWeek").value = "";
+    updateWeekDisplay("editTaskAssignedWeek", "editTaskAssignedWeekDisplay", "editTaskAssignedWeekInlineDisplay");
+    $("editTaskDueDate").value = "";
+    $("editTaskStatus").value = "Đang thực hiện";
+    $("editTaskDescription").value = "";
+    clearEditImageSelection();
+    $("editTaskNote").value = "";
+    clearEditNoteAttachmentSelection();
+    $("editTaskModalError").textContent = "";
+  }
+
+  async function saveTaskRemote(task) {
+    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
+      return { ok: false, localOnly: true, message: "Chưa cấu hình Apps Script" };
+    }
+
+    try {
+      const resp = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "saveTask", task }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const data = await resp.json().catch(() => ({ ok: true }));
+      return data && typeof data.ok !== "undefined" ? data : { ok: true };
+    } catch (err) {
+      console.error("Không lưu được lên Apps Script:", err);
+      return { ok: false, message: err.message || "Không lưu được lên hệ thống" };
+    }
+  }
+
+  async function uploadAttachmentRemote(file) {
+    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
+      return { ok: false, localOnly: true, message: "Chưa cấu hình Apps Script" };
+    }
+
+    try {
+      const payload = await fileToUploadPayload(file);
+      if (!payload) {
+        return { ok: true };
+      }
+      const resp = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "uploadAttachment",
+          fileName: payload.fileName,
+          mimeType: payload.mimeType,
+          attachmentType: payload.attachmentType,
+          base64Data: payload.base64Data
+        }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const data = await resp.json().catch(() => ({ ok: false, message: "Không nhận được phản hồi hợp lệ khi tải tệp lên." }));
+      return data && typeof data.ok !== "undefined" ? data : { ok: false, message: "Không nhận được phản hồi hợp lệ khi tải tệp lên." };
+    } catch (err) {
+      console.error("Không tải được tệp lên Apps Script:", err);
+      return { ok: false, message: err.message || "Không tải được tệp lên Google Drive" };
+    }
+  }
+
+  async function deleteAttachmentRemote(fileId) {
+    const id = String(fileId || "").trim();
+    if (!id) return { ok: true };
+    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
+      return { ok: false, localOnly: true, message: "Chưa cấu hình Apps Script" };
+    }
+
+    try {
+      const resp = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "deleteAttachment", fileId: id }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const data = await resp.json().catch(() => ({ ok: true }));
+      return data && typeof data.ok !== "undefined" ? data : { ok: true };
+    } catch (err) {
+      console.error("Không xóa được tệp trên Apps Script:", err);
+      return { ok: false, message: err.message || "Không xóa được tệp trên Google Drive" };
+    }
+  }
+
+  async function deleteTaskRemote(taskId) {
+    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
+      return { ok: false, localOnly: true, message: "Chưa cấu hình Apps Script" };
+    }
+
+    try {
+      const resp = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "deleteTask", id: taskId }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const data = await resp.json().catch(() => ({ ok: true }));
+      return data && typeof data.ok !== "undefined" ? data : { ok: true };
+    } catch (err) {
+      console.error("Không xóa được trên Apps Script:", err);
+      return { ok: false, message: err.message || "Không xóa được trên hệ thống" };
+    }
+  }
+
+  async function uploadAttachmentList(attachments) {
+    const normalized = normalizeAttachmentList(attachments);
+    const uploadedItems = [];
+
+    for (const item of normalized) {
+      if (!item.file) {
+        uploadedItems.push(normalizeAttachment(item));
+        continue;
+      }
+
+      const uploaded = await uploadAttachmentRemote(item.file);
+      if (!uploaded.ok) {
+        return { ok: false, message: uploaded.message || "Lỗi chưa xác định" };
+      }
+
+      revokePreviewUrl(item.previewUrl);
+      uploadedItems.push(normalizeAttachment({
+        attachmentUrl: uploaded.url,
+        attachmentPreviewUrl: uploaded.previewUrl || uploaded.url,
+        attachmentName: uploaded.name || item.attachmentName,
+        attachmentType: uploaded.attachmentType || item.attachmentType,
+        attachmentFileId: uploaded.fileId,
+        attachmentMimeType: uploaded.mimeType || item.attachmentMimeType
+      }));
+    }
+
+    return { ok: true, attachments: uploadedItems };
+  }
+
+  async function handleSaveTask() {
+    const id = makeId();
+    const title = $("taskTitle").value.trim();
+    const assignee = getCreateTaskAssignee();
+    const assignedWeek = $("taskAssignedWeek").value || getTodayAssignedWeek();
+    const dueDate = $("taskDueDate").value;
+    const status = "Đang thực hiện";
+    const descriptionText = $("taskDescription").value.trim();
+    const noteText = $("taskNote").value.trim();
+
+    if (!title) {
+      leeMinNguyenAlert("Vui lòng nhập tên công việc.");
+      return;
+    }
+    if (!assignee) {
+      leeMinNguyenAlert("Vui lòng nhập người phụ trách.");
+      return;
+    }
+
+    const statusBox = $("adminSaveStatus");
+    statusBox.className = "status info";
+    statusBox.textContent = hasPendingAttachmentFiles(state.createAttachments) || hasPendingAttachmentFiles(state.createNoteAttachments)
+      ? "Đang tải tệp đính kèm lên Google Drive..."
+      : "Đang lưu công việc...";
+
+    let attachments = normalizeAttachmentList(state.createAttachments);
+    let noteAttachments = normalizeAttachmentList(state.createNoteAttachments);
+    if (hasPendingAttachmentFiles(attachments)) {
+      const uploaded = await uploadAttachmentList(attachments);
+      if (!uploaded.ok) {
+        statusBox.className = "status warning";
+        statusBox.textContent = "Không tải được tệp đính kèm lên Google Drive: " + (uploaded.message || "Lỗi chưa xác định") + ". Công việc chưa được lưu.";
+        setStatus("warning", "Không tải được tệp đính kèm lên Google Drive nên chưa lưu công việc.");
+        return;
+      }
+      attachments = uploaded.attachments;
+      state.createAttachments = attachments;
+      renderImagePreview("taskImagePreview", state.createAttachments);
+    }
+
+    if (hasPendingAttachmentFiles(noteAttachments)) {
+      const uploadedNote = await uploadAttachmentList(noteAttachments);
+      if (!uploadedNote.ok) {
+        statusBox.className = "status warning";
+        statusBox.textContent = "Không tải được tệp ghi chú lên Google Drive: " + (uploadedNote.message || "Lỗi chưa xác định") + ". Công việc chưa được lưu.";
+        setStatus("warning", "Không tải được tệp ghi chú lên Google Drive nên chưa lưu công việc.");
+        return;
+      }
+      noteAttachments = uploadedNote.attachments;
+      state.createNoteAttachments = noteAttachments;
+      renderImagePreview("taskNotePreview", state.createNoteAttachments);
+    }
+
+    const description = buildTaskDescriptionPayload(descriptionText, attachments);
+    const note = buildTaskNotePayload(noteText, noteAttachments);
+    const now = new Date().toISOString();
+    const task = normalizeTask({
+      id,
+      title,
+      assignee,
+      assignedWeek,
+      dueDate,
+      status,
+      description,
+      note,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    state.tasks = sortTasks([
+      ...state.tasks.filter(item => item.id !== id),
+      task
+    ]);
+    saveLocalTasks(state.tasks);
+    renderAll();
+
+    statusBox.className = "status info";
+    statusBox.textContent = "Đang lưu công việc...";
+
+    const remote = await saveTaskRemote(task);
+    if (remote.ok) {
+      state.syncMode = "cloud";
+      updateSyncUI();
+      statusBox.className = "status success";
+      statusBox.textContent = "Đã thêm công việc mới thành công.";
+      setStatus("success", "Đã đồng bộ dữ liệu công việc lên hệ thống dùng chung.");
+      await loadTasks(false);
+      resetForm();
+    } else {
+      state.syncMode = "local";
+      updateSyncUI();
+      statusBox.className = "status warning";
+      statusBox.textContent = "Đã thêm công việc trên máy này nhưng chưa đồng bộ tập trung: " + (remote.message || "Lỗi chưa xác định") + ".";
+      setStatus("warning", "Đã lưu công việc trên máy này nhưng chưa đồng bộ lên hệ thống dùng chung.");
+      resetForm();
+    }
+  }
+
+  async function handleSaveEditedTask() {
+    const id = $("editTaskId").value.trim();
+    const title = $("editTaskTitle").value.trim();
+    const assignee = $("editTaskAssignee").value.trim();
+    const assignedWeek = $("editTaskAssignedWeek").value;
+    const dueDate = $("editTaskDueDate").value;
+    const status = normalizeTaskStatus($("editTaskStatus").value.trim());
+    const descriptionText = $("editTaskDescription").value.trim();
+    const noteText = $("editTaskNote").value.trim();
+
+    const existing = state.tasks.find(task => task.id === id);
+    if (!existing) {
+      $("editTaskModalError").textContent = "Không tìm thấy công việc cần sửa.";
+      return;
+    }
+    if (!title) {
+      $("editTaskModalError").textContent = "Vui lòng nhập tên công việc.";
+      return;
+    }
+    if (!assignee) {
+      $("editTaskModalError").textContent = "Vui lòng nhập người phụ trách.";
+      return;
+    }
+
+    $("editTaskModalError").textContent = "";
+    const oldAttachments = normalizeAttachmentList(parseTaskDescription(existing.description).attachments);
+    const oldNoteAttachments = normalizeAttachmentList(parseTaskNote(existing.note).attachments);
+    let attachments = normalizeAttachmentList(state.editAttachments);
+    let noteAttachments = normalizeAttachmentList(state.editNoteAttachments);
+
+    const statusBox = $("adminSaveStatus");
+    statusBox.className = "status info";
+    statusBox.textContent = hasPendingAttachmentFiles(attachments) || hasPendingAttachmentFiles(noteAttachments)
+      ? "Đang tải tệp đính kèm mới lên Google Drive..."
+      : "Đang lưu chỉnh sửa công việc...";
+
+    if (hasPendingAttachmentFiles(attachments)) {
+      const uploaded = await uploadAttachmentList(attachments);
+      if (!uploaded.ok) {
+        $("editTaskModalError").textContent = "Không tải được tệp đính kèm nội dung lên Google Drive: " + (uploaded.message || "Lỗi chưa xác định");
+        statusBox.className = "status warning";
+        statusBox.textContent = "Không tải được tệp đính kèm mới lên Google Drive.";
+        return;
+      }
+      attachments = uploaded.attachments;
+      state.editAttachments = attachments;
+      renderImagePreview("editTaskImagePreview", state.editAttachments);
+    }
+
+    if (hasPendingAttachmentFiles(noteAttachments)) {
+      const uploadedNote = await uploadAttachmentList(noteAttachments);
+      if (!uploadedNote.ok) {
+        $("editTaskModalError").textContent = "Không tải được tệp đính kèm ghi chú lên Google Drive: " + (uploadedNote.message || "Lỗi chưa xác định");
+        statusBox.className = "status warning";
+        statusBox.textContent = "Không tải được tệp ghi chú lên Google Drive.";
+        return;
+      }
+      noteAttachments = uploadedNote.attachments;
+      state.editNoteAttachments = noteAttachments;
+      renderImagePreview("editTaskNotePreview", state.editNoteAttachments);
+    }
+
+    const description = buildTaskDescriptionPayload(descriptionText, attachments);
+    const note = buildTaskNotePayload(noteText, noteAttachments);
+    const task = normalizeTask({
+      id,
+      title,
+      assignee,
+      assignedWeek,
+      dueDate,
+      status,
+      description,
+      note,
+      createdAt: existing.createdAt,
+      updatedAt: new Date().toISOString()
+    });
+
+    state.tasks = sortTasks([
+      ...state.tasks.filter(item => item.id !== id),
+      task
+    ]);
+    saveLocalTasks(state.tasks);
+    renderAll();
+    closeEditTaskModal();
+
+    statusBox.className = "status info";
+    statusBox.textContent = "Đang lưu chỉnh sửa công việc...";
+
+    const remote = await saveTaskRemote(task);
+    if (remote.ok) {
+      state.syncMode = "cloud";
+      updateSyncUI();
+      statusBox.className = "status success";
+      statusBox.textContent = "Đã cập nhật công việc thành công.";
+      setStatus("success", "Đã đồng bộ dữ liệu công việc lên hệ thống dùng chung.");
+
+      const newAttachmentIds = new Set(getAttachmentFileIds(attachments));
+      for (const fileId of getAttachmentFileIds(oldAttachments)) {
+        if (!newAttachmentIds.has(fileId)) await deleteAttachmentRemote(fileId);
+      }
+      const newNoteAttachmentIds = new Set(getAttachmentFileIds(noteAttachments));
+      for (const fileId of getAttachmentFileIds(oldNoteAttachments)) {
+        if (!newNoteAttachmentIds.has(fileId)) await deleteAttachmentRemote(fileId);
+      }
+
+      await loadTasks(false);
+    } else {
+      state.syncMode = "local";
+      updateSyncUI();
+      statusBox.className = "status warning";
+      statusBox.textContent = "Đã cập nhật công việc trên máy này nhưng chưa đồng bộ tập trung: " + (remote.message || "Lỗi chưa xác định") + ".";
+      setStatus("warning", "Đã lưu công việc trên máy này nhưng chưa đồng bộ lên hệ thống dùng chung.");
+    }
+  }
+
+  async function handleDeleteTask(taskId) {
+    const task = state.tasks.find(item => item.id === taskId);
+    if (!task) return;
+    const ok = confirm('Bạn chắc chắn muốn xóa công việc "' + task.title + '"?');
+    if (!ok) return;
+
+    const attachments = normalizeAttachmentList(parseTaskDescription(task.description).attachments);
+    const noteAttachments = normalizeAttachmentList(parseTaskNote(task.note).attachments);
+
+    state.tasks = sortTasks(state.tasks.filter(item => item.id !== taskId));
+    saveLocalTasks(state.tasks);
+    renderAll();
+
+    const statusBox = $("adminSaveStatus");
+    statusBox.className = "status info";
+    statusBox.textContent = "Đang xóa công việc...";
+
+    const remote = await deleteTaskRemote(taskId);
+    if (remote.ok) {
+      state.syncMode = "cloud";
+      updateSyncUI();
+      statusBox.className = "status success";
+      statusBox.textContent = "Đã xóa công việc thành công.";
+      setStatus("success", "Đã xóa công việc trên hệ thống dùng chung.");
+      for (const fileId of getAttachmentFileIds(attachments)) {
+        await deleteAttachmentRemote(fileId);
+      }
+      for (const fileId of getAttachmentFileIds(noteAttachments)) {
+        await deleteAttachmentRemote(fileId);
+      }
+      await loadTasks(false);
+    } else {
+      state.syncMode = "local";
+      updateSyncUI();
+      statusBox.className = "status warning";
+      statusBox.textContent = "Đã xóa công việc trên máy này nhưng chưa đồng bộ tập trung: " + (remote.message || "Lỗi chưa xác định") + ".";
+      setStatus("warning", "Đã xóa công việc trên máy này nhưng chưa đồng bộ lên hệ thống dùng chung.");
+    }
+  }
+
+  function exportCsv() {
+    if (!state.tasks.length) {
+      leeMinNguyenAlert("Chưa có dữ liệu để xuất.");
+      return;
+    }
+
+    const rows = state.tasks.map((task, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${escapeHtml(task.title)}</td>
+        <td>${escapeHtml(task.assignee || "")}</td>
+        <td>${escapeHtml(formatWeek(task.assignedWeek))}</td>
+        <td>${escapeHtml(formatDate(task.dueDate))}</td>
+        <td>${escapeHtml(task.status)}</td>
+        <td>${escapeHtml(getTaskDescriptionText(task.description) || "")}${hasAttachment(parseTaskDescription(task.description)) ? " (Có tệp đính kèm)" : ""}</td>
+        <td>${escapeHtml(getTaskNoteText(task.note) || "")}${hasAttachment(parseTaskNote(task.note)) ? " (Có tệp đính kèm)" : ""}</td>
+        <td>${escapeHtml(formatDateTime(task.updatedAt))}</td>
+      </tr>
+    `).join("");
+
+    const workbookHtml = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:x="urn:schemas-microsoft-com:office:excel"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<!--[if gte mso 9]><xml>
+<x:ExcelWorkbook>
+  <x:ExcelWorksheets>
+    <x:ExcelWorksheet>
+      <x:Name>Cong viec doi</x:Name>
+      <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+    </x:ExcelWorksheet>
+  </x:ExcelWorksheets>
+</x:ExcelWorkbook>
+</xml><![endif]-->
+<style>
+table{border-collapse:collapse;font-family:"Times New Roman",Times,serif}
+th,td{border:1px solid #000;padding:6px 8px;vertical-align:middle}
+th{font-weight:700;background:#f1f1f1}
+</style>
+</head>
+<body>
+<table>
+  <thead>
+    <tr>
+      <th>STT</th>
+      <th>Tên công việc</th>
+      <th>Người phụ trách</th>
+      <th>Tuần giao</th>
+      <th>Hạn hoàn thành</th>
+      <th>Trạng thái</th>
+      <th>Nội dung</th>
+      <th>Ghi chú</th>
+      <th>Cập nhật cuối</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+</table>
+</body>
+</html>`;
+
+    const blob = new Blob(["\ufeff" + workbookHtml], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "quan_ly_cong_viec_doi.xls";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  function buildPrintTableRows(tasks) {
+    return tasks.map((task, idx) => {
+      const noteText = getDisplayNote(task) || (task.status === "Hoàn thành" && hasAttachment(parseTaskNote(task.note)) ? "Có tệp đính kèm" : "-");
+      return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${escapeHtml(task.title)}</td>
+          <td>${escapeHtml(task.assignee || "-")}</td>
+          <td>${escapeHtml(formatWeek(task.assignedWeek))}</td>
+          <td>${escapeHtml(formatDate(task.dueDate))}</td>
+          <td>${escapeHtml(task.status)}</td>
+          <td>${escapeHtml(noteText)}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function printWeeklyReport() {
+    const tasks = getDisplayedTasksForPrint();
+    if (!tasks.length) {
+      leeMinNguyenAlert("Không có dữ liệu phù hợp để in báo cáo.");
+      return;
+    }
+
+    const total = tasks.length;
+    const doing = tasks.filter(task => task.status === "Đang thực hiện").length;
+    const done = tasks.filter(task => task.status === "Hoàn thành").length;
+    const overdue = tasks.filter(task => isOverdue(task)).length;
+    const dueSoon = tasks.filter(task => isDueSoon(task)).length;
+    const reportTitle = "BÁO CÁO CÔNG VIỆC";
+    const rangeText = getDisplayedRangeText(tasks);
+    const printWindow = window.open("", "_blank", "width=1100,height=800");
+    if (!printWindow) {
+      leeMinNguyenAlert("Trình duyệt đang chặn cửa sổ in. Hãy cho phép pop-up rồi thử lại.");
+      return;
+    }
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>${reportTitle}</title>
+<style>
+  body{font-family:"Times New Roman",Times,serif;margin:28px;color:#111;}
+  .admin-head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:18px;}
+  .admin-head .col{width:48%;text-align:center;line-height:1.4;}
+  .admin-head .line1,.admin-head .line2{font-weight:700;}
+  .admin-head .line1{text-transform:uppercase;font-size:17px;}
+  .admin-head .line2{font-size:16px;}
+  .admin-head .line-rule{width:120px;border-top:1px solid #111;margin:6px auto 0;}
+  h1{text-align:center;font-size:24px;margin:12px 0 8px;}
+  .meta{text-align:center;font-size:14px;margin-bottom:16px;line-height:1.6;}
+  .stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;}
+  .stats span{border:1px solid #333;padding:6px 10px;border-radius:999px;font-size:14px;}
+  table{width:100%;border-collapse:collapse;margin-top:8px;}
+  th,td{border:1px solid #333;padding:8px 6px;font-size:14px;vertical-align:middle;text-align:center;}
+  th{background:#f1f1f1;}
+  @media print{body{margin:16px;}}
+</style>
+</head>
+<body>
+  <div class="admin-head">
+    <div class="col left">
+      <div class="line1">PHÒNG PC07</div>
+      <div class="line2">ĐỘI CÔNG TÁC PHÒNG CHÁY</div>
+      <div class="line-rule"></div>
+    </div>
+    <div class="col right">
+      <div class="line1">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+      <div class="line2">Độc lập - Tự do - Hạnh phúc</div>
+      <div class="line-rule"></div>
+    </div>
+  </div>
+  <h1>${reportTitle}</h1>
+  <div class="meta">Ngày in: ${escapeHtml(new Date().toLocaleString("vi-VN"))}${rangeText ? `<br>${escapeHtml(rangeText)}` : ""}</div>
+  <div class="stats">
+    <span>Tổng công việc: <b>${total}</b></span>
+    <span>Đang thực hiện: <b>${doing}</b></span>
+    <span>Hoàn thành: <b>${done}</b></span>
+    <span>Quá hạn: <b>${overdue}</b></span>
+    <span>Sắp hết hạn: <b>${dueSoon}</b></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>STT</th>
+        <th>Công việc</th>
+        <th>Người phụ trách</th>
+        <th>Tuần giao</th>
+        <th>Hạn hoàn thành</th>
+        <th>Trạng thái</th>
+        <th>Ghi chú</th>
+      </tr>
+    </thead>
+    <tbody>${buildPrintTableRows(tasks)}</tbody>
+  </table>
+</body>
+</html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  }
+
+  function clearFilters() {
+    $("filterKeyword").value = "";
+    $("filterAssignee").value = "";
+    $("filterWeek").value = "";
+    $("filterStatus").value = "";
+    $("filterSoonDue").value = "";
+    renderViewerSection();
+  }
+
+  function clearAdminFilters() {
+    $("adminFilterKeyword").value = "";
+    $("adminFilterAssignee").value = "";
+    $("adminFilterWeek").value = "";
+    renderAdminSection();
+  }
+
+
+  function getViewerAlertTasks() {
+    return {
+      overdue: state.tasks.filter(task => isOverdue(task)),
+      dueSoon: state.tasks.filter(task => isDueSoon(task))
+    };
+  }
+
+  function buildViewerAlertTable(tasks, type) {
+    if (!tasks.length) {
+      return '<div class="alert-empty">' + (type === "overdue"
+        ? 'Hiện không có công việc quá hạn.'
+        : 'Hiện không có công việc nào hết hạn trong 3 ngày tới.') + '</div>';
+    }
+
+    return `
+      <table>
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Công việc</th>
+            <th>Người phụ trách</th>
+            <th>Tuần giao</th>
+            <th>Hạn hoàn thành</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tasks.map((task, idx) => `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>
+                <div class="task-title">${escapeHtml(task.title)}</div>
+                ${buildTaskDescriptionHtml(task.description)}
+              </td>
+              <td>${escapeHtml(task.assignee || "-")}</td>
+              <td>${formatWeekStackedHtml(task.assignedWeek)}</td>
+              <td><span class="${type === "dueSoon" ? "due-soon-date" : ""}">${escapeHtml(formatDate(task.dueDate))}</span></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function openViewerAlertModal() {
+    $("viewerAlertModal").classList.remove("hidden");
+  }
+
+  function closeViewerAlertModal() {
+    $("viewerAlertModal").classList.add("hidden");
+  }
+
+  function showViewerAlertModal() {
+    const groups = getViewerAlertTasks();
+    const overdueTasks = sortTasks(groups.overdue);
+    const dueSoonTasks = sortTasks(groups.dueSoon);
+
+    $("viewerAlertOverdueCount").textContent = String(overdueTasks.length);
+    $("viewerAlertDueSoonCount").textContent = String(dueSoonTasks.length);
+    $("viewerAlertOverdueList").innerHTML = buildViewerAlertTable(overdueTasks, "overdue");
+    $("viewerAlertDueSoonList").innerHTML = buildViewerAlertTable(dueSoonTasks, "dueSoon");
+
+    const totalAttention = overdueTasks.length + dueSoonTasks.length;
+    $("viewerAlertSub").textContent = totalAttention
+      ? `Hiện có ${overdueTasks.length} công việc quá hạn và ${dueSoonTasks.length} công việc hết hạn trong 3 ngày cần theo dõi.`
+      : "Hiện chưa có công việc quá hạn hoặc hết hạn trong 3 ngày tới.";
+
+    openViewerAlertModal();
+  }
+
+
+  function openViewerLoginModal() {
+    $("viewerLoginModal").classList.remove("hidden");
+    $("viewerPasswordInput").value = "";
+    $("viewerModalError").textContent = "";
+    setPasswordVisibility("viewerPasswordInput", "btnToggleViewerPassword", false);
+    setTimeout(() => $("viewerPasswordInput").focus(), 30);
+  }
+
+  function closeViewerLoginModal() {
+    $("viewerLoginModal").classList.add("hidden");
+    $("viewerPasswordInput").value = "";
+    $("viewerModalError").textContent = "";
+    setPasswordVisibility("viewerPasswordInput", "btnToggleViewerPassword", false);
+  }
+
+  function handleViewerLogin() {
+    document.body.classList.remove("work-program-full");
+    $("viewerPassword").value = "";
+    closeViewerLoginModal();
+
+    if (!state.tasks.length) {
+      const cachedTasks = sortTasks(readLocalTasks());
+      if (cachedTasks.length) {
+        state.tasks = cachedTasks;
+        state.lastLoadSource = "local-cache";
+      }
+    }
+
+    navigateToAppView("viewer");
+
+    setTimeout(() => {
+      if (!$("viewerPanel").classList.contains("hidden")) {
+        showViewerAlertModal();
+      }
+    }, 80);
+  }
+
+  $("btnViewerMode").addEventListener("click", handleViewerLogin);
+
+  function openAdminLoginModal() {
+    $("adminLoginModal").classList.remove("hidden");
+    $("adminPasswordInput").value = "";
+    $("adminModalError").textContent = "";
+    setPasswordVisibility("adminPasswordInput", "btnToggleAdminPassword", false);
+    setTimeout(() => $("adminPasswordInput").focus(), 30);
+  }
+
+  function closeAdminLoginModal() {
+    $("adminLoginModal").classList.add("hidden");
+    $("adminPasswordInput").value = "";
+    $("adminModalError").textContent = "";
+    setPasswordVisibility("adminPasswordInput", "btnToggleAdminPassword", false);
+  }
+
+  function setPasswordVisibility(inputId, buttonId, visible) {
+    const input = $(inputId);
+    const button = $(buttonId);
+    if (!input || !button) return;
+    input.type = visible ? "text" : "password";
+    button.textContent = visible ? "Ẩn mật khẩu" : "Hiện mật khẩu";
+  }
+
+  function togglePasswordVisibility(inputId, buttonId) {
+    const input = $(inputId);
+    if (!input) return;
+    setPasswordVisibility(inputId, buttonId, input.type === "password");
+    input.focus();
+  }
+
+  function handleEnterToSave(event, saveFn, options = {}) {
+    const isTextarea = event.target.tagName === "TEXTAREA";
+    if (event.key === "Escape") {
+      if (typeof options.onEscape === "function") options.onEscape();
+      return;
+    }
+    if (event.key !== "Enter") return;
+    if (event.shiftKey) return;
+    if (isTextarea && event.altKey) return;
+    event.preventDefault();
+    saveFn();
+  }
+
+  function handleAdminLogin() {
+    document.body.classList.remove("work-program-full");
+    const pass = $("adminPasswordInput").value || "";
+    if (!pass) {
+      $("adminModalError").textContent = "Vui lòng nhập mật khẩu admin.";
+      $("adminPasswordInput").focus();
+      return;
+    }
+    if (pass !== ADMIN_PASSWORD) {
+      $("adminModalError").textContent = "Sai mật khẩu admin.";
+      $("adminPasswordInput").focus();
+      $("adminPasswordInput").select();
+      return;
+    }
+    $("adminPassword").value = pass;
+    closeAdminLoginModal();
+    resetForm();
+    navigateToAppView("admin", { allowAdmin: true });
+  }
+
+  $("btnAdminMode").addEventListener("click", openAdminLoginModal);
+  $("btnWorkProgramMode").addEventListener("click", openWorkProgramMode);
+
+  $("btnBackHome").addEventListener("click", () => {
+    navigateToAppView("home");
+  });
+
+  if ($("btnProgramBackHome")) $("btnProgramBackHome").addEventListener("click", () => {
+    resetProgramForm();
+    navigateToAppView("home");
+  });
+
+  $("btnLogoutAdmin").addEventListener("click", () => {
+    resetForm();
+    navigateToAppView("home", { replaceHistory: true });
+  });
+
+  $("btnPrintWeeklyReportViewer").addEventListener("click", printWeeklyReport);
+  $("btnPrintWeeklyReportAdmin").addEventListener("click", printWeeklyReport);
+  $("btnExportCsv").addEventListener("click", exportCsv);
+  if ($("btnPrintProgram")) $("btnPrintProgram").addEventListener("click", printWorkProgram);
+  if ($("btnExportProgram")) $("btnExportProgram").addEventListener("click", exportProgramCsv);
+  if ($("btnSaveProgram")) $("btnSaveProgram").addEventListener("click", handleSaveProgram);
+  if ($("btnResetProgram")) $("btnResetProgram").addEventListener("click", resetProgramForm);
+  if ($("btnClearProgramFilters")) $("btnClearProgramFilters").addEventListener("click", clearProgramFilters);
+  $("btnSaveTask").addEventListener("click", handleSaveTask);
+  $("btnResetForm").addEventListener("click", resetForm);
+  $("taskAssignee").addEventListener("change", toggleCustomAssigneeInput);
+  $("taskDescriptionImage").addEventListener("change", handleCreateImageUpload);
+  $("taskNoteFile").addEventListener("change", handleCreateNoteFileUpload);
+  $("editTaskDescriptionImage").addEventListener("change", handleEditImageUpload);
+  $("editTaskNoteFile").addEventListener("change", handleEditNoteFileUpload);
+  $("btnRemoveTaskImage").addEventListener("click", clearCreateImageSelection);
+  $("btnRemoveTaskNoteFile").addEventListener("click", clearCreateNoteAttachmentSelection);
+  $("btnRemoveEditTaskImage").addEventListener("click", clearEditImageSelection);
+  $("btnRemoveEditTaskNoteFile").addEventListener("click", clearEditNoteAttachmentSelection);
+  $("taskAssignedWeek").addEventListener("input", () => updateWeekDisplay("taskAssignedWeek", "taskAssignedWeekDisplay", "taskAssignedWeekInlineDisplay"));
+  $("taskAssignedWeek").addEventListener("change", () => updateWeekDisplay("taskAssignedWeek", "taskAssignedWeekDisplay", "taskAssignedWeekInlineDisplay"));
+  $("editTaskAssignedWeek").addEventListener("input", () => updateWeekDisplay("editTaskAssignedWeek", "editTaskAssignedWeekDisplay", "editTaskAssignedWeekInlineDisplay"));
+  $("editTaskAssignedWeek").addEventListener("change", () => updateWeekDisplay("editTaskAssignedWeek", "editTaskAssignedWeekDisplay", "editTaskAssignedWeekInlineDisplay"));
+  $("btnClearFilters").addEventListener("click", clearFilters);
+  $("btnClearAdminFilters").addEventListener("click", clearAdminFilters);
+
+  ["filterKeyword", "filterAssignee", "filterWeek", "filterStatus", "filterSoonDue"].forEach(id => {
+    $(id).addEventListener("input", renderViewerSection);
+    $(id).addEventListener("change", renderViewerSection);
+  });
+
+  ["adminFilterKeyword", "adminFilterAssignee", "adminFilterWeek"].forEach(id => {
+    $(id).addEventListener("input", renderAdminSection);
+    $(id).addEventListener("change", renderAdminSection);
+  });
+
+  ["programFilterKeyword", "programFilterStatus", "programFilterMonth"].forEach(id => {
+    if ($(id)) {
+      $(id).addEventListener("input", renderWorkProgramSection);
+      $(id).addEventListener("change", renderWorkProgramSection);
+    }
+  });
+
+
+  $("btnCloseViewerAlert").addEventListener("click", closeViewerAlertModal);
+  $("viewerAlertModal").addEventListener("click", (event) => {
+    if (event.target === $("viewerAlertModal")) closeViewerAlertModal();
+  });
+
+  $("btnSubmitViewerLogin").addEventListener("click", handleViewerLogin);
+  $("btnCancelViewerLogin").addEventListener("click", closeViewerLoginModal);
+  $("btnToggleViewerPassword").addEventListener("click", () => togglePasswordVisibility("viewerPasswordInput", "btnToggleViewerPassword"));
+  $("btnSubmitAdminLogin").addEventListener("click", handleAdminLogin);
+  $("btnCancelAdminLogin").addEventListener("click", closeAdminLoginModal);
+  $("btnToggleAdminPassword").addEventListener("click", () => togglePasswordVisibility("adminPasswordInput", "btnToggleAdminPassword"));
+  $("btnSaveEditTask").addEventListener("click", handleSaveEditedTask);
+  $("btnCancelEditTask").addEventListener("click", closeEditTaskModal);
+  $("viewerPasswordInput").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleViewerLogin();
+    } else if (event.key === "Escape") {
+      closeViewerLoginModal();
+    }
+  });
+  $("viewerLoginModal").addEventListener("click", (event) => {
+    if (event.target === $("viewerLoginModal")) closeViewerLoginModal();
+  });
+  $("adminPasswordInput").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleAdminLogin();
+    } else if (event.key === "Escape") {
+      closeAdminLoginModal();
+    }
+  });
+  $("adminLoginModal").addEventListener("click", (event) => {
+    if (event.target === $("adminLoginModal")) closeAdminLoginModal();
+  });
+  $("editTaskModal").addEventListener("click", (event) => {
+    if (event.target === $("editTaskModal")) closeEditTaskModal();
+  });
+  const editModalCard = $("editTaskModal").querySelector(".modal-card");
+  const editModalBody = $("editTaskModal").querySelector(".modal-body");
+  if (editModalCard && editModalBody) {
+    editModalCard.addEventListener("wheel", (event) => {
+      if ($("editTaskModal").classList.contains("hidden")) return;
+      if (editModalBody.scrollHeight <= editModalBody.clientHeight) return;
+      if (!event.target.closest(".modal-body")) {
+        event.preventDefault();
+        editModalBody.scrollTop += event.deltaY;
+      }
+    }, { passive: false });
+  }
+  ["taskTitle", "taskAssignee", "taskAssigneeCustom", "taskAssignedWeek", "taskDueDate", "taskStatus", "taskDescription", "taskNote"].forEach(id => {
+    $(id).addEventListener("keydown", (event) => handleEnterToSave(event, handleSaveTask));
+  });
+  ["editTaskTitle", "editTaskAssignee", "editTaskAssignedWeek", "editTaskDueDate", "editTaskStatus", "editTaskDescription", "editTaskNote", "editTaskNoteFile"].forEach(id => {
+    $(id).addEventListener("keydown", (event) => handleEnterToSave(event, handleSaveEditedTask, { onEscape: closeEditTaskModal }));
+  });
+  ["programDate", "programTime", "programContent", "programLocation", "programLead", "programParticipants", "programStatus", "programNote"].forEach(id => {
+    if ($(id)) $(id).addEventListener("keydown", (event) => handleEnterToSave(event, handleSaveProgram, { onEscape: resetProgramForm }));
+  });
+
+  if ($("btnOpenProgramReport")) $("btnOpenProgramReport").addEventListener("click", openProgramReportModal);
+  if ($("btnExportWorkProgramTable")) $("btnExportWorkProgramTable").addEventListener("click", exportWorkProgramTableExcel);
+  if ($("btnPrintWorkProgramTable")) $("btnPrintWorkProgramTable").addEventListener("click", printWorkProgramTable);
+  if ($("btnCloseProgramReport")) $("btnCloseProgramReport").addEventListener("click", closeProgramReportModal);
+  if ($("btnExportProgramReport")) $("btnExportProgramReport").addEventListener("click", exportProgramReportExcel);
+  if ($("btnPrintProgramReport")) $("btnPrintProgramReport").addEventListener("click", printProgramReport);
+  if ($("programReportPeople")) $("programReportPeople").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-report-person]");
+    if (!button) return;
+    renderProgramReportForPerson(button.getAttribute("data-report-person") || "");
+  });
+  if ($("programReportModal")) $("programReportModal").addEventListener("click", (event) => {
+    if (event.target === $("programReportModal")) closeProgramReportModal();
+  });
+  ["programReportFrom", "programReportTo"].forEach(id => {
+    if ($(id)) $(id).addEventListener("change", () => {
+      if (selectedProgramReportPerson) renderProgramReportForPerson(selectedProgramReportPerson);
+      else resetProgramReportResult();
+    });
+  });
+
+  if ($("btnBackHomeFromProgram")) $("btnBackHomeFromProgram").addEventListener("click", () => {
+    navigateToAppView("home");
+  });
+
+  if ($("programBody")) $("programBody").addEventListener("dblclick", (event) => {
+    const cell = event.target.closest('td[data-editable-program="true"]');
+    if (!cell) return;
+    startEditingProgramCell(cell);
+  });
+
+  $("adminTaskBody").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const action = button.getAttribute("data-action");
+    const taskId = button.getAttribute("data-id");
+    if (action === "edit") {
+      openEditTaskModal(taskId);
+    } else if (action === "delete") {
+      handleDeleteTask(taskId);
+    }
+  });
+
+  updateSyncUI();
+  toggleCustomAssigneeInput();
+  setDefaultAssignedWeek();
+  updateWeekDisplay("editTaskAssignedWeek", "editTaskAssignedWeekDisplay", "editTaskAssignedWeekInlineDisplay");
+  loadPrograms();
+  resetProgramForm();
+  renderAll();
+  loadTasks();
+})();
+</script>
+</body>
+</html>
