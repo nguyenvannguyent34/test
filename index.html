@@ -417,6 +417,7 @@
     .state-done{background:#fff8e8;color:#8b5a00;border-color:#f5e2a8}
     .state-hold{background:#f5f7fa;color:#475467;border-color:#d9e0ea}
     .state-overdue{background:#fff1f1;color:#a12626;border-color:#f0c7c7}
+    .state-due-soon{background:#fff8d6;color:#8b5a00;border-color:#f5e2a8}
     table{
       width:100%;
       border-collapse:collapse;
@@ -507,10 +508,24 @@
       text-decoration:underline;
     }
     .task-row-soon td{
-      background:#ffe3ee;
+      background:#fff8d6;
     }
     .task-row-soon:hover td{
-      background:#ffd6e6;
+      background:#fff1b8;
+    }
+    .task-row-overdue td{
+      background:#ffe2e2;
+      color:#7a1010;
+      font-weight:600;
+    }
+    .task-row-overdue:hover td{
+      background:#ffd0d0;
+    }
+    .task-overdue-note{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      margin-bottom:6px;
     }
     .due-soon-date{
       color:#c62828;
@@ -1129,7 +1144,8 @@
             <div class="flex" style="justify-content:flex-end; margin-bottom:6px">
               <div class="flex">
                 <button id="btnPrintWeeklyReportViewer" class="secondary">In báo cáo</button>
-                                <button id="btnBackHome" class="secondary">Quay lại</button>
+                <button id="btnExportXlsxViewer" class="secondary">Xuất Excel</button>
+                <button id="btnBackHome" class="secondary">Quay lại</button>
               </div>
             </div>
 
@@ -1182,7 +1198,8 @@
                   <label for="filterSoonDue">Ghi chú</label>
                   <select id="filterSoonDue">
                     <option value="">Tất cả</option>
-                    <option value="yes">Chỉ việc sắp hết hạn</option>
+                    <option value="overdue">Quá hạn</option>
+                    <option value="dueSoon">Sắp hết hạn</option>
                   </select>
                 </div>
                 <div>
@@ -1545,7 +1562,6 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 style="margin:0;font-size:24px">Đăng nhập Admin</h3>
-        <div class="muted small" style="margin-top:6px">Nhập mật khẩu để quản lý công việc.</div>
       </div>
       <div class="modal-body">
         <label for="adminPasswordInput">Mật khẩu</label>
@@ -1717,14 +1733,15 @@
   }
 
 (() => {
-  // Dán link Web App Apps Script dạng /exec vào dòng dưới để cả đội cùng xem chung dữ liệu.
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6P-PKA4rqBcDnTa69LYoXC0gDCeB-lDJmX0xtcok28PvQYrhy-YViwXU6wSBpEVlB/exec";
+  // Sau khi triển khai file Code.gs trong thư mục apps-script, dán link Web App dạng /exec vào dòng dưới.
+  const SCRIPT_URL = "PASTE_YOUR_DEPLOYED_WEB_APP_URL_HERE";
   const VIEWER_PASSWORD = "doi2pc07";
   const ADMIN_PASSWORD = "Doi2thang3";
   const LOCAL_STORAGE_KEY = "pc07_team_tasks_v1";
   const PROGRAM_STORAGE_KEY = "pc07_work_programs_v1";
   const DESCRIPTION_IMAGE_PREFIX = "__TASKDESCIMG__";
   const NOTE_ATTACHMENT_PREFIX = "__TASKNOTEFILE__";
+  const AUTO_SYNC_INTERVAL_MS = 15000;
 
   function makeEmptyAttachment() {
     return {
@@ -1748,7 +1765,10 @@
     createAttachments: [],
     createNoteAttachments: [],
     editAttachments: [],
-    editNoteAttachments: []
+    editNoteAttachments: [],
+    cloudSyncSignature: "",
+    autoSyncTimer: null,
+    isAutoRefreshing: false
   };
 
   const $ = (id) => document.getElementById(id);
@@ -1757,6 +1777,121 @@
     const box = $("loadStatus");
     box.className = "status " + type;
     box.innerHTML = html;
+  }
+
+  function hasConfiguredScriptUrl() {
+    const url = String(SCRIPT_URL || "").trim();
+    return Boolean(url) && !url.includes("PASTE_YOUR") && /^https?:\/\//i.test(url);
+  }
+
+  function makeScriptUrl(params = {}) {
+    const url = String(SCRIPT_URL || "").trim();
+    const query = new URLSearchParams({ ...params, _ts: Date.now() });
+    return url + (url.includes("?") ? "&" : "?") + query.toString();
+  }
+
+  async function getScriptJson(params = {}) {
+    const resp = await fetch(makeScriptUrl(params), { cache: "no-store" });
+    return await resp.json();
+  }
+
+  async function postScriptJson(payload = {}) {
+    const resp = await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "text/plain;charset=utf-8" }
+    });
+    return await resp.json().catch(() => ({ ok: true }));
+  }
+
+  function makeCloudSyncSignature(data) {
+    const stateData = data && data.state ? data.state : data;
+    return JSON.stringify(stateData || {});
+  }
+
+  async function getCloudSyncSignature() {
+    if (!hasConfiguredScriptUrl()) return "";
+    const data = await getScriptJson({ action: "syncState" });
+    if (!data || data.ok === false) {
+      throw new Error((data && data.message) || "Không đọc được trạng thái đồng bộ Google Sheet");
+    }
+    return makeCloudSyncSignature(data);
+  }
+
+  function isUserEditingData() {
+    const active = document.activeElement;
+    const isTextInput = active && (active.matches?.("input, textarea, select") || active.isContentEditable);
+    const anyModalOpen = ["viewerLoginModal", "adminLoginModal", "editTaskModal", "programReportModal", "viewerAlertModal"].some(id => {
+      const el = $(id);
+      return el && !el.classList.contains("hidden");
+    });
+    const programEditorOpen = !!document.querySelector(".program-split-editor");
+    return Boolean(isTextInput || anyModalOpen || programEditorOpen);
+  }
+
+  async function refreshCloudDataSilently() {
+    if (!hasConfiguredScriptUrl()) return false;
+    const [taskData, programTableData, programListData] = await Promise.all([
+      getScriptJson({ action: "listTasks" }),
+      getScriptJson({ action: "listProgramTable" }),
+      getScriptJson({ action: "listPrograms" })
+    ]);
+
+    const taskRows = Array.isArray(taskData.rows) ? taskData.rows : [];
+    state.tasks = sortTasks(taskRows.map(normalizeTask).filter(task => task.title));
+    saveLocalTasks(state.tasks);
+
+    const tableRows = Array.isArray(programTableData.rows) ? programTableData.rows : [];
+    saveProgramTableData(normalizeProgramTableRows(tableRows));
+
+    const programRows = Array.isArray(programListData.rows) ? programListData.rows : [];
+    state.programs = sortPrograms(programRows.map(normalizeProgram).filter(item => item.content));
+    saveLocalPrograms(state.programs);
+
+    state.syncMode = "cloud";
+    state.lastLoadSource = "cloud";
+    updateSyncUI();
+    renderAll();
+    return true;
+  }
+
+  async function checkCloudChanges() {
+    if (!hasConfiguredScriptUrl() || state.isAutoRefreshing || isUserEditingData()) return;
+    try {
+      const signature = await getCloudSyncSignature();
+      if (!signature) return;
+      if (!state.cloudSyncSignature) {
+        state.cloudSyncSignature = signature;
+        return;
+      }
+      if (signature !== state.cloudSyncSignature) {
+        state.isAutoRefreshing = true;
+        await refreshCloudDataSilently();
+        state.cloudSyncSignature = signature;
+        setStatus("success", "Google Sheet có thay đổi, dữ liệu đã được tự cập nhật.");
+      }
+    } catch (err) {
+      console.warn("Không kiểm tra được thay đổi Google Sheet:", err);
+    } finally {
+      state.isAutoRefreshing = false;
+    }
+  }
+
+  async function primeCloudSyncSignature() {
+    try {
+      state.cloudSyncSignature = await getCloudSyncSignature();
+    } catch (err) {
+      console.warn("Không khởi tạo được trạng thái đồng bộ Google Sheet:", err);
+    }
+  }
+
+  function startAutoSyncWatcher() {
+    if (state.autoSyncTimer || !hasConfiguredScriptUrl()) return;
+    primeCloudSyncSignature();
+    state.autoSyncTimer = window.setInterval(checkCloudChanges, AUTO_SYNC_INTERVAL_MS);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) checkCloudChanges();
+    });
   }
 
   function escapeHtml(value) {
@@ -1976,7 +2111,12 @@
   }
 
   function buildNoteCellHtml(task) {
-    if (isDueSoon(task)) return escapeHtml("Sắp hết hạn");
+    if (isOverdue(task)) {
+      const noteHtml = buildTaskNoteHtml(task.note);
+      const hasUserNote = noteHtml && !noteHtml.includes('class="muted"');
+      return `<span class="state-tag state-overdue task-overdue-note">Quá hạn</span>${hasUserNote ? noteHtml : ""}`;
+    }
+    if (isDueSoon(task)) return `<span class="state-tag state-due-soon task-overdue-note">Sắp hết hạn</span>`;
     if (task.status === "Hoàn thành") {
       const noteData = parseTaskNote(task.note);
       if (noteData.text || hasAttachments(noteData.attachments)) {
@@ -2269,7 +2409,7 @@
     if (appView === "viewer") {
       document.body.classList.remove("work-program-full");
       enterWorkMode();
-      setMain("Danh sách công việc của đội", "Mọi thành viên có thể theo dõi toàn bộ đầu việc, người phụ trách và thời hạn xử lý.");
+      setMain("Danh sách công việc của đội", "");
       showOnly("viewerPanel");
       renderViewerSection();
       return;
@@ -2479,6 +2619,7 @@
   }
 
   function getDisplayNote(task) {
+    if (isOverdue(task)) return "Quá hạn";
     if (isDueSoon(task)) return "Sắp hết hạn";
     if (task.status === "Hoàn thành") return getTaskNoteText(task.note);
     return "";
@@ -2636,7 +2777,7 @@
       setStatus("info", "Đang mở nhanh dữ liệu đã lưu trên máy và đồng bộ nền...");
     }
 
-    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
+    if (!hasConfiguredScriptUrl()) {
       state.tasks = localTasks;
       state.syncMode = "local";
       state.lastLoadSource = "local";
@@ -2648,9 +2789,7 @@
     }
 
     try {
-      const url = SCRIPT_URL + (SCRIPT_URL.includes("?") ? "&" : "?") + "action=listTasks&_ts=" + Date.now();
-      const resp = await fetch(url, { cache: "no-store" });
-      const data = await resp.json();
+      const data = await getScriptJson({ action: "listTasks" });
       const rows = Array.isArray(data.rows) ? data.rows : [];
       state.tasks = sortTasks(rows.map(normalizeTask).filter(task => task.title));
       state.syncMode = "cloud";
@@ -2703,13 +2842,23 @@
     const soonDue = $("filterSoonDue").value.trim();
 
     return state.tasks.filter(task => {
+      const overdue = isOverdue(task);
       const dueSoon = isDueSoon(task);
-      const haystack = [task.title, getTaskDescriptionText(task.description), task.assignee, getTaskNoteText(task.note), formatWeek(task.assignedWeek), dueSoon ? "sắp hết hạn" : ""].join(" ").toLowerCase();
+      const haystack = [
+        task.title,
+        getTaskDescriptionText(task.description),
+        task.assignee,
+        getTaskNoteText(task.note),
+        formatWeek(task.assignedWeek),
+        overdue ? "quá hạn" : "",
+        dueSoon ? "sắp hết hạn" : ""
+      ].join(" ").toLowerCase();
       if (keyword && !haystack.includes(keyword)) return false;
       if (assignee && task.assignee !== assignee) return false;
       if (week && task.assignedWeek !== week) return false;
       if (status && task.status !== status) return false;
-      if (soonDue === "yes" && !dueSoon) return false;
+      if (soonDue === "overdue" && !overdue) return false;
+      if (soonDue === "dueSoon" && !dueSoon) return false;
       return true;
     });
   }
@@ -2776,11 +2925,11 @@
     }
 
     tasks.forEach((task, idx) => {
-      const overdueText = isOverdue(task) ? ' <span class="state-tag state-overdue">Quá hạn</span>' : "";
       const dueSoonClass = isDueSoon(task) ? 'due-soon-date' : '';
       const noteHtml = buildNoteCellHtml(task);
       const tr = document.createElement("tr");
-      if (isDueSoon(task)) tr.classList.add("task-row-soon");
+      if (isOverdue(task)) tr.classList.add("task-row-overdue");
+      else if (isDueSoon(task)) tr.classList.add("task-row-soon");
       tr.innerHTML = `
         <td>${idx + 1}</td>
         <td>
@@ -2789,7 +2938,7 @@
         </td>
         <td>${escapeHtml(task.assignee || "-")}</td>
         <td>${formatWeekStackedHtml(task.assignedWeek)}</td>
-        <td><span class="${dueSoonClass}">${escapeHtml(formatDate(task.dueDate))}</span>${overdueText}</td>
+        <td><span class="${dueSoonClass}">${escapeHtml(formatDate(task.dueDate))}</span></td>
         <td><span class="state-tag ${statusClass(task.status)}">${escapeHtml(task.status)}</span></td>
         <td class="task-note-cell">${noteHtml}</td>
       `;
@@ -2816,7 +2965,8 @@
       const noteHtml = buildNoteCellHtml(task);
       const dueSoonClass = isDueSoon(task) ? 'due-soon-date' : '';
       const tr = document.createElement("tr");
-      if (isDueSoon(task)) tr.classList.add("task-row-soon");
+      if (isOverdue(task)) tr.classList.add("task-row-overdue");
+      else if (isDueSoon(task)) tr.classList.add("task-row-soon");
       tr.innerHTML = `
         <td>${idx + 1}</td>
         <td>
@@ -2900,6 +3050,32 @@
 
   function loadPrograms() {
     state.programs = sortPrograms(readLocalPrograms());
+  }
+
+  async function loadProgramsFromCloud(showToast = false) {
+    const localPrograms = sortPrograms(readLocalPrograms());
+    if (!hasConfiguredScriptUrl()) {
+      state.programs = localPrograms;
+      saveLocalPrograms(state.programs);
+      return { ok: false, localOnly: true, message: "Chưa cấu hình Apps Script" };
+    }
+
+    try {
+      const data = await getScriptJson({ action: "listPrograms" });
+      const rows = Array.isArray(data.rows) ? data.rows : [];
+      state.programs = sortPrograms(rows.map(normalizeProgram).filter(item => item.content));
+      saveLocalPrograms(state.programs);
+      renderWorkProgramSection();
+      if (showToast) setStatus("success", "Đã đồng bộ danh sách Chương trình công tác từ Google Sheet.");
+      return { ok: true, rows };
+    } catch (err) {
+      console.error("Không đọc được danh sách Chương trình công tác từ Apps Script:", err);
+      state.programs = localPrograms;
+      saveLocalPrograms(state.programs);
+      renderWorkProgramSection();
+      if (showToast) setStatus("warning", "Không kết nối được Apps Script, đang dùng danh sách Chương trình công tác cục bộ gần nhất.");
+      return { ok: false, message: err.message || "Không đọc được danh sách chương trình công tác" };
+    }
   }
 
   function programStatusClass(status) {
@@ -3110,6 +3286,63 @@
       localStorage.setItem(WORK_PROGRAM_TABLE_STORAGE_KEY, JSON.stringify(data || {}));
     } catch (err) {
       console.warn("Không lưu được chương trình công tác", err);
+    }
+  }
+
+  function normalizeProgramTableRows(rows) {
+    if (!Array.isArray(rows)) return {};
+    return rows.reduce((acc, row) => {
+      const dayKey = normalizeDate(row.dayKey || row.date || "");
+      const field = String(row.field || "").trim();
+      const person = String(row.person || "").trim();
+      const value = String(row.value || "");
+      if (!dayKey || !field || !person) return acc;
+      setProgramFieldValue(acc, dayKey, field, person, value);
+      return acc;
+    }, {});
+  }
+
+  async function loadProgramTableData(showToast = false) {
+    const localData = readProgramTableData();
+    if (!hasConfiguredScriptUrl()) {
+      saveProgramTableData(localData);
+      return { ok: false, localOnly: true, message: "Chưa cấu hình Apps Script" };
+    }
+
+    try {
+      const data = await getScriptJson({ action: "listProgramTable" });
+      const rows = Array.isArray(data.rows) ? data.rows : [];
+      const cloudData = normalizeProgramTableRows(rows);
+      saveProgramTableData(cloudData);
+      renderWorkProgramSection();
+      if (showToast) setStatus("success", "Đã đồng bộ bảng Chương trình công tác từ Google Sheet.");
+      return { ok: true, rows };
+    } catch (err) {
+      console.error("Không đọc được bảng Chương trình công tác từ Apps Script:", err);
+      saveProgramTableData(localData);
+      renderWorkProgramSection();
+      if (showToast) setStatus("warning", "Không kết nối được Apps Script, đang dùng dữ liệu Chương trình công tác cục bộ gần nhất.");
+      return { ok: false, message: err.message || "Không đọc được dữ liệu chương trình công tác" };
+    }
+  }
+
+  async function saveProgramTableCellRemote(dayKey, field, person, value) {
+    if (!hasConfiguredScriptUrl()) {
+      return { ok: false, localOnly: true, message: "Chưa cấu hình Apps Script" };
+    }
+
+    try {
+      const data = await postScriptJson({
+        action: "saveProgramCell",
+        dayKey,
+        field,
+        person,
+        value
+      });
+      return data && typeof data.ok !== "undefined" ? data : { ok: true };
+    } catch (err) {
+      console.error("Không lưu được ô Chương trình công tác lên Apps Script:", err);
+      return { ok: false, message: err.message || "Không lưu được chương trình công tác lên Google Sheet" };
     }
   }
 
@@ -3565,6 +3798,7 @@
       setSelectedWorkProgramDate(dateFromKey(input.value));
       input.remove();
       renderWorkProgramSection();
+      loadProgramTableData(false);
     };
 
     input.addEventListener("change", applySelectedDate);
@@ -3793,9 +4027,20 @@
       const saveDate = field === "previous" ? addDays(selectedDate, -1) : selectedDate;
       const saveField = field === "previous" ? "todayResult" : field;
       const selectedKey = getDateKey(saveDate);
-      setProgramFieldValue(latestData, selectedKey, saveField, person, makeProgramSplitValue(morningEditor.value, afternoonEditor.value));
+      const newValue = makeProgramSplitValue(morningEditor.value, afternoonEditor.value);
+      setProgramFieldValue(latestData, selectedKey, saveField, person, newValue);
       saveProgramTableData(latestData);
       renderWorkProgramSection();
+      saveProgramTableCellRemote(selectedKey, saveField, person, newValue).then(remote => {
+        if (remote.ok) {
+          state.syncMode = "cloud";
+          updateSyncUI();
+        } else if (!remote.localOnly) {
+          state.syncMode = "local";
+          updateSyncUI();
+          setStatus("warning", "Đã lưu Chương trình công tác trên máy này nhưng chưa đồng bộ lên Google Sheet: " + (remote.message || "Lỗi chưa xác định") + ".");
+        }
+      });
     };
 
     const cancel = () => {
@@ -3889,6 +4134,7 @@
 
   function openWorkProgramMode() {
     navigateToAppView("program");
+    loadProgramTableData(true);
   }
 
   function exportProgramCsv() {
@@ -4048,7 +4294,7 @@
   }
 
   async function saveTaskRemote(task) {
-    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
+    if (!hasConfiguredScriptUrl()) {
       return { ok: false, localOnly: true, message: "Chưa cấu hình Apps Script" };
     }
 
@@ -4067,7 +4313,7 @@
   }
 
   async function uploadAttachmentRemote(file) {
-    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
+    if (!hasConfiguredScriptUrl()) {
       return { ok: false, localOnly: true, message: "Chưa cấu hình Apps Script" };
     }
 
@@ -4079,7 +4325,7 @@
       const resp = await fetch(SCRIPT_URL, {
         method: "POST",
         body: JSON.stringify({
-          action: "uploadAttachment",
+          action: payload.attachmentType === "image" ? "uploadImage" : "uploadAttachment",
           fileName: payload.fileName,
           mimeType: payload.mimeType,
           attachmentType: payload.attachmentType,
@@ -4098,7 +4344,7 @@
   async function deleteAttachmentRemote(fileId) {
     const id = String(fileId || "").trim();
     if (!id) return { ok: true };
-    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
+    if (!hasConfiguredScriptUrl()) {
       return { ok: false, localOnly: true, message: "Chưa cấu hình Apps Script" };
     }
 
@@ -4117,7 +4363,7 @@
   }
 
   async function deleteTaskRemote(taskId) {
-    if (!SCRIPT_URL || SCRIPT_URL.includes("PASTE_YOUR")) {
+    if (!hasConfiguredScriptUrl()) {
       return { ok: false, localOnly: true, message: "Chưa cấu hình Apps Script" };
     }
 
@@ -4417,14 +4663,113 @@
     }
   }
 
+  function getTaskReportFileName() {
+    const now = new Date();
+    const pad = value => String(value).padStart(2, "0");
+    return `bao-cao-cong-viec-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  }
+
+  function buildTaskExportNote(task) {
+    const noteParts = [];
+    if (isOverdue(task)) noteParts.push("Quá hạn");
+    else if (isDueSoon(task)) noteParts.push("Sắp hết hạn");
+    const noteText = getTaskNoteText(task.note) || "";
+    if (noteText) noteParts.push(noteText);
+    if (hasAttachment(parseTaskNote(task.note))) noteParts.push("Có tệp đính kèm");
+    return noteParts.join(" - ");
+  }
+
+  function makeTaskReportXlsxBlob(tasks) {
+    const headers = ["STT", "Tên công việc", "Người phụ trách", "Tuần giao", "Hạn hoàn thành", "Trạng thái", "Nội dung", "Ghi chú", "Cập nhật cuối"];
+    const rows = [];
+    const title = "Báo cáo công việc đội";
+    const rangeText = getDisplayedRangeText(tasks);
+    rows.push(`<row r="1">${xlsxCell(1, 1, title, 2)}</row>`);
+    rows.push(`<row r="2">${xlsxCell(2, 1, "Ngày xuất")}${xlsxCell(2, 2, new Date().toLocaleString("vi-VN"))}</row>`);
+    if (rangeText) rows.push(`<row r="3">${xlsxCell(3, 1, "Khoảng thời gian")}${xlsxCell(3, 2, rangeText)}</row>`);
+    rows.push(`<row r="5">${headers.map((header, index) => xlsxCell(5, index + 1, header, 2)).join("")}</row>`);
+    tasks.forEach((task, idx) => {
+      const r = idx + 6;
+      const style = isOverdue(task) ? 3 : (isDueSoon(task) ? 4 : 1);
+      const values = [
+        idx + 1,
+        task.title,
+        task.assignee || "",
+        formatWeek(task.assignedWeek),
+        formatDate(task.dueDate),
+        task.status,
+        `${getTaskDescriptionText(task.description) || ""}${hasAttachment(parseTaskDescription(task.description)) ? " (Có tệp đính kèm)" : ""}`,
+        buildTaskExportNote(task),
+        formatDateTime(task.updatedAt)
+      ];
+      rows.push(`<row r="${r}">${values.map((value, index) => xlsxCell(r, index + 1, value, style)).join("")}</row>`);
+    });
+    const lastRow = Math.max(tasks.length + 5, 5);
+    const sheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <cols>
+    <col min="1" max="1" width="8" customWidth="1"/>
+    <col min="2" max="2" width="34" customWidth="1"/>
+    <col min="3" max="3" width="22" customWidth="1"/>
+    <col min="4" max="4" width="18" customWidth="1"/>
+    <col min="5" max="5" width="18" customWidth="1"/>
+    <col min="6" max="6" width="18" customWidth="1"/>
+    <col min="7" max="7" width="46" customWidth="1"/>
+    <col min="8" max="8" width="34" customWidth="1"/>
+    <col min="9" max="9" width="22" customWidth="1"/>
+  </cols>
+  <sheetData>${rows.join("")}</sheetData>
+  <mergeCells count="1"><mergeCell ref="A1:I1"/></mergeCells>
+</worksheet>`;
+    const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="3"><font><sz val="12"/><name val="Times New Roman"/></font><font><b/><sz val="12"/><name val="Times New Roman"/></font><font><b/><sz val="12"/><color rgb="FF7A1010"/><name val="Times New Roman"/></font></fonts>
+  <fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF1F1F1"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFE2E2"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF8D6"/><bgColor indexed="64"/></patternFill></fill></fills>
+  <borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyAlignment="1" applyBorder="1" applyFill="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyAlignment="1" applyBorder="1" applyFill="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyAlignment="1" applyBorder="1" applyFill="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf></cellXfs>
+  <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+    return makeXlsxZip({
+      "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`,
+      "_rels/.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+      "xl/workbook.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Công việc" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+      "xl/_rels/workbook.xml.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`,
+      "xl/worksheets/sheet1.xml": sheetXml,
+      "xl/styles.xml": stylesXml
+    });
+  }
+
+  function exportViewerTasksXlsx() {
+    const tasks = sortTasks(getFilteredTasks());
+    if (!tasks.length) {
+      leeMinNguyenAlert("Không có dữ liệu phù hợp để xuất Excel.");
+      return;
+    }
+    const blob = makeTaskReportXlsxBlob(tasks);
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${getTaskReportFileName()}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  }
+
   function exportCsv() {
     if (!state.tasks.length) {
       leeMinNguyenAlert("Chưa có dữ liệu để xuất.");
       return;
     }
 
-    const rows = state.tasks.map((task, idx) => `
-      <tr>
+    const rows = state.tasks.map((task, idx) => {
+      const noteParts = [];
+      if (isOverdue(task)) noteParts.push("Quá hạn");
+      const noteText = getTaskNoteText(task.note) || "";
+      if (noteText) noteParts.push(noteText);
+      if (hasAttachment(parseTaskNote(task.note))) noteParts.push("Có tệp đính kèm");
+      return `
+      <tr class="${isOverdue(task) ? "excel-overdue-row" : ""}">
         <td>${idx + 1}</td>
         <td>${escapeHtml(task.title)}</td>
         <td>${escapeHtml(task.assignee || "")}</td>
@@ -4432,10 +4777,11 @@
         <td>${escapeHtml(formatDate(task.dueDate))}</td>
         <td>${escapeHtml(task.status)}</td>
         <td>${escapeHtml(getTaskDescriptionText(task.description) || "")}${hasAttachment(parseTaskDescription(task.description)) ? " (Có tệp đính kèm)" : ""}</td>
-        <td>${escapeHtml(getTaskNoteText(task.note) || "")}${hasAttachment(parseTaskNote(task.note)) ? " (Có tệp đính kèm)" : ""}</td>
+        <td>${escapeHtml(noteParts.join(" - "))}</td>
         <td>${escapeHtml(formatDateTime(task.updatedAt))}</td>
       </tr>
-    `).join("");
+    `;
+    }).join("");
 
     const workbookHtml = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -4457,6 +4803,7 @@
 table{border-collapse:collapse;font-family:"Times New Roman",Times,serif}
 th,td{border:1px solid #000;padding:6px 8px;vertical-align:middle}
 th{font-weight:700;background:#f1f1f1}
+.excel-overdue-row td{background:#ffe2e2;color:#7a1010;font-weight:600}
 </style>
 </head>
 <body>
@@ -4492,7 +4839,7 @@ th{font-weight:700;background:#f1f1f1}
     return tasks.map((task, idx) => {
       const noteText = getDisplayNote(task) || (task.status === "Hoàn thành" && hasAttachment(parseTaskNote(task.note)) ? "Có tệp đính kèm" : "-");
       return `
-        <tr>
+        <tr class="${isOverdue(task) ? "print-overdue-row" : ""}">
           <td>${idx + 1}</td>
           <td>${escapeHtml(task.title)}</td>
           <td>${escapeHtml(task.assignee || "-")}</td>
@@ -4545,6 +4892,7 @@ th{font-weight:700;background:#f1f1f1}
   table{width:100%;border-collapse:collapse;margin-top:8px;}
   th,td{border:1px solid #333;padding:8px 6px;font-size:14px;vertical-align:middle;text-align:center;}
   th{background:#f1f1f1;}
+  .print-overdue-row td{background:#ffe2e2;color:#7a1010;font-weight:700;}
   @media print{body{margin:16px;}}
 </style>
 </head>
@@ -4607,6 +4955,19 @@ th{font-weight:700;background:#f1f1f1}
     $("adminFilterAssignee").value = "";
     $("adminFilterWeek").value = "";
     renderAdminSection();
+  }
+
+  function installSafeBackdropClose(modalId, closeFn) {
+    const modal = $(modalId);
+    if (!modal) return;
+    let pointerStartedOnBackdrop = false;
+    modal.addEventListener("mousedown", (event) => {
+      pointerStartedOnBackdrop = event.target === modal;
+    });
+    modal.addEventListener("mouseup", (event) => {
+      if (pointerStartedOnBackdrop && event.target === modal) closeFn();
+      pointerStartedOnBackdrop = false;
+    });
   }
 
 
@@ -4800,6 +5161,7 @@ th{font-weight:700;background:#f1f1f1}
   });
 
   $("btnPrintWeeklyReportViewer").addEventListener("click", printWeeklyReport);
+  $("btnExportXlsxViewer").addEventListener("click", exportViewerTasksXlsx);
   $("btnPrintWeeklyReportAdmin").addEventListener("click", printWeeklyReport);
   $("btnExportCsv").addEventListener("click", exportCsv);
   if ($("btnPrintProgram")) $("btnPrintProgram").addEventListener("click", printWorkProgram);
@@ -4864,9 +5226,7 @@ th{font-weight:700;background:#f1f1f1}
       closeViewerLoginModal();
     }
   });
-  $("viewerLoginModal").addEventListener("click", (event) => {
-    if (event.target === $("viewerLoginModal")) closeViewerLoginModal();
-  });
+  installSafeBackdropClose("viewerLoginModal", closeViewerLoginModal);
   $("adminPasswordInput").addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -4875,9 +5235,7 @@ th{font-weight:700;background:#f1f1f1}
       closeAdminLoginModal();
     }
   });
-  $("adminLoginModal").addEventListener("click", (event) => {
-    if (event.target === $("adminLoginModal")) closeAdminLoginModal();
-  });
+  installSafeBackdropClose("adminLoginModal", closeAdminLoginModal);
   $("editTaskModal").addEventListener("click", (event) => {
     if (event.target === $("editTaskModal")) closeEditTaskModal();
   });
@@ -4953,7 +5311,10 @@ th{font-weight:700;background:#f1f1f1}
   loadPrograms();
   resetProgramForm();
   renderAll();
-  loadTasks();
+  loadProgramTableData(false);
+  loadProgramsFromCloud(false);
+  loadTasks().then(() => primeCloudSyncSignature());
+  startAutoSyncWatcher();
 })();
 </script>
 </body>
