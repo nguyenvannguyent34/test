@@ -3295,7 +3295,7 @@
       const dayKey = normalizeDate(row.dayKey || row.date || "");
       const field = String(row.field || "").trim();
       const person = String(row.person || "").trim();
-      const value = String(row.value || "");
+      const value = normalizeProgramStoredCellValue(row.value || "");
       if (!dayKey || !field || !person) return acc;
       setProgramFieldValue(acc, dayKey, field, person, value);
       return acc;
@@ -3337,7 +3337,7 @@
         dayKey,
         field,
         person,
-        value
+        value: serializeProgramSplitValueForSheet(value)
       });
       return data && typeof data.ok !== "undefined" ? data : { ok: true };
     } catch (err) {
@@ -3861,7 +3861,45 @@
       };
     }
     const text = String(value || "");
+    const trimmed = text.trim();
+    if (!trimmed || trimmed === "[object Object]") return { morning: "", afternoon: "" };
+
+    if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          return {
+            morning: String(parsed.morning || parsed.sang || parsed.am || ""),
+            afternoon: String(parsed.afternoon || parsed.chieu || parsed.pm || "")
+          };
+        }
+      } catch (err) {
+        // Không phải JSON hợp lệ thì xử lý như văn bản thường bên dưới.
+      }
+    }
+
+    const labeledMatch = trimmed.match(/^Sáng\s*:\s*([\s\S]*?)(?:\r?\n\s*Chiều\s*:\s*([\s\S]*))?$/i);
+    if (labeledMatch) {
+      return {
+        morning: String(labeledMatch[1] || "").trim(),
+        afternoon: String(labeledMatch[2] || "").trim()
+      };
+    }
+
     return { morning: text, afternoon: "" };
+  }
+
+  function normalizeProgramStoredCellValue(value) {
+    const split = normalizeProgramSplitValue(value);
+    return isProgramSplitValueEmpty(split) ? "" : split;
+  }
+
+  function serializeProgramSplitValueForSheet(value) {
+    const split = normalizeProgramSplitValue(value);
+    const morning = split.morning.trim();
+    const afternoon = split.afternoon.trim();
+    if (!morning && !afternoon) return "";
+    return JSON.stringify({ morning, afternoon });
   }
 
   function isProgramSplitValueEmpty(value) {
