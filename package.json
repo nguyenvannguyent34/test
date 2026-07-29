@@ -1,0 +1,36 @@
+{
+  "name": "thi-cbkt-inet",
+  "private": true,
+  "version": "2.1.0",
+  "description": "Hệ thống thi CBKT triển khai trên cPanel Node.js App của iNET",
+  "main": "app.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "postinstall": "prisma generate --schema prisma/schema.prisma",
+    "db:push": "prisma db push --schema prisma/schema.prisma",
+    "health": "node scripts/health-check.js"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@cbkt/exam-engine": "file:packages/exam-engine",
+    "@nestjs/common": "11.1.28",
+    "@nestjs/core": "11.1.28",
+    "@nestjs/platform-express": "11.1.28",
+    "@prisma/client": "6.19.0",
+    "bcryptjs": "3.0.3",
+    "cookie-parser": "1.4.7",
+    "dotenv": "17.4.2",
+    "exceljs": "4.4.0",
+    "express": "5.2.1",
+    "helmet": "8.3.0",
+    "prisma": "6.19.0",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  }
+}
+

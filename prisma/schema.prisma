@@ -1,0 +1,284 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  displayName  String
+  passwordHash String
+  role         String    @default("ADMIN")
+  isActive     Boolean   @default(true)
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Session {
+  id            String       @id
+  csrfToken     String?      @default(uuid())
+  role          String
+  userId        Int?
+  participantId Int?
+  user          User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  participant   Participant? @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  expiresAt     DateTime
+  createdAt     DateTime     @default(now())
+
+  @@index([expiresAt])
+}
+
+model Unit {
+  id            Int                @id @default(autoincrement())
+  code          String             @unique
+  name          String             @unique
+  isActive      Boolean            @default(true)
+  participants  Participant[]
+  distributions ExamDistribution[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model Participant {
+  id             Int          @id @default(autoincrement())
+  unitId         Int
+  unit           Unit         @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  fullName       String
+  normalizedName String
+  position       String?
+  accessCodeHash String
+  isActive       Boolean      @default(true)
+  sessions       Session[]
+  rosters        ExamRoster[]
+  attempts       Attempt[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([unitId, normalizedName])
+  @@index([unitId, isActive])
+}
+
+model QuestionCategory {
+  id            Int                @id @default(autoincrement())
+  code          String             @unique
+  name          String             @unique
+  isActive      Boolean            @default(true)
+  questions     Question[]
+  distributions ExamDistribution[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model Question {
+  id             Int               @id @default(autoincrement())
+  legacyStt      Int?
+  categoryId     Int
+  category       QuestionCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  content        String
+  optionA        String
+  optionB        String
+  optionC        String
+  optionD        String
+  correctOption  String
+  legalBasis     String
+  status         String            @default("APPROVED")
+  version        Int               @default(1)
+  effectiveFrom  DateTime?
+  effectiveUntil DateTime?
+  attemptItems   AttemptQuestion[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([categoryId, status])
+  @@index([legacyStt])
+}
+
+model ExamCycle {
+  id              Int                @id @default(autoincrement())
+  examMonth       Int
+  examRound       Int
+  title           String
+  welcomeContent  String
+  status          String             @default("DRAFT")
+  startAt         DateTime
+  endAt           DateTime
+  totalQuestions  Int                @default(20)
+  durationMinutes Int                @default(15)
+  passScore       Float              @default(5)
+  version         Int                @default(1)
+  distributions   ExamDistribution[]
+  rosters         ExamRoster[]
+  attempts        Attempt[]
+  securityPolicy  ExamSecurityPolicy?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@unique([examMonth, examRound])
+  @@index([status, startAt, endAt])
+}
+
+model ExamSecurityPolicy {
+  id                       Int       @id @default(autoincrement())
+  examCycleId              Int       @unique
+  enabled                  Boolean   @default(true)
+  requireFullscreen        Boolean   @default(true)
+  blockClipboard           Boolean   @default(true)
+  blockContextMenu         Boolean   @default(true)
+  blockPrint               Boolean   @default(true)
+  disableTextSelection     Boolean   @default(true)
+  watermarkEnabled         Boolean   @default(true)
+  questionDeliveryMode     String    @default("ONE_AT_A_TIME")
+  maxFocusLosses           Int       @default(3)
+  maxHiddenSeconds         Int       @default(60)
+  maxConcurrentSessions    Int       @default(1)
+  enforcementAction        String    @default("AUTO_SUBMIT")
+  heartbeatIntervalSeconds Int       @default(15)
+  integrityAgreement       String    @default("Tôi cam kết tự làm bài, không sao chép, không chuyển sang ứng dụng khác và không sử dụng AI hay công cụ hỗ trợ để trả lời.")
+  version                  Int       @default(1)
+  examCycle                ExamCycle @relation(fields: [examCycleId], references: [id], onDelete: Cascade)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+}
+
+model ExamDistribution {
+  id           Int              @id @default(autoincrement())
+  examCycleId  Int
+  unitId       Int?
+  categoryId   Int
+  percentage   Float
+  examCycle    ExamCycle        @relation(fields: [examCycleId], references: [id], onDelete: Cascade)
+  unit         Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  category     QuestionCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@unique([examCycleId, unitId, categoryId])
+  @@index([examCycleId, unitId])
+}
+
+model ExamRoster {
+  id            Int         @id @default(autoincrement())
+  examCycleId   Int
+  participantId Int
+  status        String      @default("ELIGIBLE")
+  note          String?
+  examCycle     ExamCycle   @relation(fields: [examCycleId], references: [id], onDelete: Cascade)
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([examCycleId, participantId])
+  @@index([examCycleId, status])
+}
+
+model Attempt {
+  id              Int               @id @default(autoincrement())
+  examCycleId     Int
+  participantId   Int
+  status          String            @default("IN_PROGRESS")
+  startedAt       DateTime          @default(now())
+  expiresAt       DateTime
+  submittedAt     DateTime?
+  correctCount    Int?
+  totalQuestions  Int
+  score           Float?
+  passState       String?
+  passed          Boolean?
+  idempotencyKey  String?           @unique
+  version         Int               @default(1)
+  integrityStatus String            @default("NORMAL")
+  riskScore       Int               @default(0)
+  violationCount  Int               @default(0)
+  focusLossCount  Int               @default(0)
+  hiddenDurationMs Int              @default(0)
+  lastHeartbeatAt DateTime?
+  deviceSessionId String?
+  securityVersion Int               @default(1)
+  integrityAcceptedAt DateTime?
+  examCycle       ExamCycle         @relation(fields: [examCycleId], references: [id], onDelete: Restrict)
+  participant     Participant       @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  questions       AttemptQuestion[]
+  antiCheatEvents AntiCheatEvent[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([examCycleId, participantId])
+  @@index([examCycleId, status])
+  @@index([integrityStatus, riskScore])
+}
+
+model AntiCheatEvent {
+  id               Int      @id @default(autoincrement())
+  attemptId        Int
+  eventType        String
+  sequenceNumber   Int
+  clientOccurredAt DateTime
+  serverReceivedAt DateTime @default(now())
+  durationMs       Int?
+  pageOrder        Int?
+  metadata         Json?
+  deviceSessionId  String
+  ipAddress        String?
+  userAgentHash    String?
+  attempt          Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, deviceSessionId, sequenceNumber])
+  @@index([attemptId, serverReceivedAt])
+  @@index([eventType, serverReceivedAt])
+}
+
+model AttemptQuestion {
+  id                   Int            @id @default(autoincrement())
+  attemptId            Int
+  questionId           Int
+  displayOrder         Int
+  questionSnapshot     Json
+  optionMapping        Json
+  correctDisplayOption String
+  attempt              Attempt        @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question             Question       @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  answer               AttemptAnswer?
+
+  @@unique([attemptId, displayOrder])
+  @@unique([attemptId, questionId])
+}
+
+model AttemptAnswer {
+  id                Int             @id @default(autoincrement())
+  attemptQuestionId Int             @unique
+  selectedOption    String?
+  isFlagged         Boolean         @default(false)
+  answeredAt        DateTime        @default(now())
+  attemptQuestion   AttemptQuestion @relation(fields: [attemptQuestionId], references: [id], onDelete: Cascade)
+  updatedAt         DateTime        @updatedAt
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorType  String
+  actorId    Int?
+  action     String
+  entityType String
+  entityId   String?
+  beforeData Json?
+  afterData  Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model QuestionImportBatch {
+  id          Int       @id @default(autoincrement())
+  status      String    @default("VALIDATED")
+  filename    String
+  payload     Json
+  issues      Json
+  createdBy   Int
+  createdAt   DateTime  @default(now())
+  committedAt DateTime?
+}
